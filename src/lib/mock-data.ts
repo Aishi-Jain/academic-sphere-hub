@@ -2,8 +2,8 @@ import { Department, Student, Faculty, Subject, Classroom, Exam, Mark, Circular,
 
 export const departments: Department[] = [
   { id: '1', name: 'Computer Science & Engineering', code: '05' },
-  { id: '2', name: 'Computer Science & Machine Learning', code: '66' },
-  { id: '3', name: 'Computer Science & Data Science', code: '67' },
+  { id: '2', name: 'CSE (Artificial Intelligence & Machine Learning)', code: '66' },
+  { id: '3', name: 'CSE (Data Science)', code: '67' },
   { id: '4', name: 'Electronics & Communication Engineering', code: '04' },
   { id: '5', name: 'Information Technology', code: '12' },
   { id: '6', name: 'AI & Data Science', code: '72' },
@@ -11,8 +11,8 @@ export const departments: Department[] = [
 
 export const deptShortNames: Record<string, string> = {
   'Computer Science & Engineering': 'CSE',
-  'Computer Science & Machine Learning': 'CSM',
-  'Computer Science & Data Science': 'CSD',
+  'CSE (Artificial Intelligence & Machine Learning)': 'CSM',
+  'CSE (Data Science)': 'CSD',
   'Electronics & Communication Engineering': 'ECE',
   'Information Technology': 'IT',
   'AI & Data Science': 'AIDS',

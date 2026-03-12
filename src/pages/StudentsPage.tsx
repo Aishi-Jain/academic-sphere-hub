@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/DataTable";
-import { students, departments, deptShortNames } from "@/lib/mock-data";
+import { departments, deptShortNames } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,53 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const StudentsPage = () => {
+
   const [open, setOpen] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [name, setName] = useState("");
+  const [rollNumber, setRollNumber] = useState("");
+  const [department, setDepartment] = useState("");
+  const [section, setSection] = useState("");
+  const [year, setYear] = useState("");
+  const [semester, setSemester] = useState("");
+  const [cgpa, setCgpa] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/students")
+      .then(res => res.json())
+      .then(data => setStudents(data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const addStudent = async (e: any) => {
+    e.preventDefault();   // stops page reload
+
+    console.log("Sending student...");
+
+    const res = await fetch("http://localhost:5000/students", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        rollNumber,
+        department_id: department,
+        year,
+        semester,
+        section,
+        cgpa: 0
+      })
+    });
+
+    const data = await res.json();
+    console.log(data);
+
+    setOpen(false);
+
+    window.location.reload();
+  };
 
   const columns = [
     { key: 'rollNumber', header: 'Roll Number', render: (s: any) => <span className="font-mono text-xs">{s.rollNumber}</span> },
@@ -25,10 +71,36 @@ const StudentsPage = () => {
     { key: 'cgpa', header: 'CGPA', render: (s: any) => <span className="font-medium">{s.cgpa}</span> },
     {
       key: 'actions', header: 'Actions',
-      render: () => (
+      render: (s:any) => (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => {
+              setEditingId(s.student_id);
+
+              setName(s.name);
+              setRollNumber(s.rollNumber);
+              setDepartment(s.department_id);
+              setYear(s.year);
+              setSemester(s.semester);
+              setSection(s.section);
+              setCgpa(s.cgpa);
+
+              setOpen(true);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive"
+            onClick={() => deleteStudent(s.student_id)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       ),
     },
@@ -38,6 +110,38 @@ const StudentsPage = () => {
     label: deptShortNames[d.name],
     value: d.name,
   }));
+
+  const deleteStudent = async (id:any) => {
+
+    await fetch(`http://localhost:5000/students/${id}`, {
+      method: "DELETE"
+    });
+
+    window.location.reload();
+  };
+
+  const updateStudent = async (id:any) => {
+
+    await fetch(`http://localhost:5000/students/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name,
+        rollNumber,
+        department_id: department,
+        year,
+        semester,
+        section,
+        cgpa
+      })
+    });
+
+    setEditingId(null);
+    setOpen(false);
+    window.location.reload();
+  };
 
   return (
     <div className="space-y-6">
@@ -71,27 +175,35 @@ const StudentsPage = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label>Name</Label>
-                    <Input placeholder="Student name" />
+                    <Input
+                      placeholder="Student name"
+                      value={name}
+                      onChange={(e)=>setName(e.target.value)}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label>Roll Number</Label>
-                    <Input placeholder="e.g., 22Q91A0501" />
+                    <Input
+                      placeholder="e.g., 22Q91A0501"
+                      value={rollNumber}
+                      onChange={(e)=>setRollNumber(e.target.value)}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Department</Label>
-                      <Select>
+                      <Select onValueChange={setDepartment}>
                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent>
                           {departments.map(d => (
-                            <SelectItem key={d.id} value={d.name}>{deptShortNames[d.name]}</SelectItem>
+                            <SelectItem key={d.id} value={d.id}>{deptShortNames[d.name]}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="grid gap-2">
                       <Label>Section</Label>
-                      <Select>
+                      <Select onValueChange={setSection}>
                         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="A">A</SelectItem>
@@ -104,14 +216,34 @@ const StudentsPage = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Year</Label>
-                      <Input type="number" placeholder="1-4" />
+                      <Input
+                        type="number"
+                        placeholder="1-4"
+                        value={year}
+                        onChange={(e)=>setYear(e.target.value)}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label>Semester</Label>
-                      <Input type="number" placeholder="1-8" />
+                      <Input
+                        type="number"
+                        placeholder="1-8"
+                        value={semester}
+                        onChange={(e)=>setSemester(e.target.value)}
+                      />
                     </div>
                   </div>
-                  <Button onClick={() => setOpen(false)}>Add Student</Button>
+                  <Button
+                    onClick={(e) => {
+                      if (editingId) {
+                        updateStudent(editingId);
+                      } else {
+                        addStudent(e);
+                      }
+                    }}
+                  >
+                    {editingId ? "Update Student" : "Add Student"}
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
