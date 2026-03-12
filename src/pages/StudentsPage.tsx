@@ -13,6 +13,7 @@ const StudentsPage = () => {
 
   const [open, setOpen] = useState(false);
   const [students, setStudents] = useState([]);
+  console.log(students);
   const [name, setName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
   const [department, setDepartment] = useState("");
@@ -25,7 +26,20 @@ const StudentsPage = () => {
   useEffect(() => {
     fetch("http://localhost:5000/students")
       .then(res => res.json())
-      .then(data => setStudents(data))
+      .then(data => {
+        const formatted = data.map((s:any) => ({
+          student_id: s.student_id,
+          rollNumber: s.roll_number,
+          name: s.name,
+          department: s.department_id,
+          year: s.year,
+          semester: s.semester,
+          section: s.section,
+          cgpa: s.cgpa
+        }));
+
+        setStudents(formatted);
+      })
       .catch(err => console.error(err));
   }, []);
 
@@ -59,11 +73,22 @@ const StudentsPage = () => {
   };
 
   const columns = [
-    { key: 'rollNumber', header: 'Roll Number', render: (s: any) => <span className="font-mono text-xs">{s.rollNumber}</span> },
+  {
+    key: 'rollNumber',
+    header: 'Roll Number',
+    render: (s:any) => (
+      <span className="font-mono text-xs">{s.rollNumber}</span>
+    )
+  },
     { key: 'name', header: 'Name' },
     {
-      key: 'department', header: 'Department',
-      render: (s: any) => <Badge variant="secondary" className="text-xs">{deptShortNames[s.department] || s.department}</Badge>
+      key: 'department',
+      header: 'Department',
+      render: (s:any) => (
+        <Badge variant="secondary" className="text-xs">
+          {departmentMap[s.department]}
+        </Badge>
+      )
     },
     { key: 'year', header: 'Year' },
     { key: 'semester', header: 'Semester' },
@@ -142,6 +167,11 @@ const StudentsPage = () => {
     setOpen(false);
     window.location.reload();
   };
+
+  const departmentMap:any = {};
+  departments.forEach(d => {
+    departmentMap[d.id] = deptShortNames[d.name];
+  });
 
   return (
     <div className="space-y-6">

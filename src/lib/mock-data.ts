@@ -1,12 +1,12 @@
 import { Department, Student, Faculty, Subject, Classroom, Exam, Mark, Circular, Notification } from './types';
 
 export const departments: Department[] = [
-  { id: '1', name: 'Computer Science & Engineering', code: '05' },
-  { id: '2', name: 'CSE (Artificial Intelligence & Machine Learning)', code: '66' },
-  { id: '3', name: 'CSE (Data Science)', code: '67' },
-  { id: '4', name: 'Electronics & Communication Engineering', code: '04' },
-  { id: '5', name: 'Information Technology', code: '12' },
-  { id: '6', name: 'AI & Data Science', code: '72' },
+  { id: '7', name: 'Computer Science & Engineering', code: '05' },
+  { id: '8', name: 'CSE (Artificial Intelligence & Machine Learning)', code: '66' },
+  { id: '9', name: 'CSE (Data Science)', code: '67' },
+  { id: '10', name: 'Electronics & Communication Engineering', code: '04' },
+  { id: '11', name: 'Information Technology', code: '12' },
+  { id: '12', name: 'AI & Data Science', code: '72' },
 ];
 
 export const deptShortNames: Record<string, string> = {
