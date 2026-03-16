@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const StudentsPage = () => {
 
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
   const [students, setStudents] = useState([]);
   console.log(students);
@@ -173,6 +174,37 @@ const StudentsPage = () => {
     departmentMap[d.id] = deptShortNames[d.name];
   });
 
+  const uploadCSV = async () => {
+
+    if (!csvFile) {
+      alert("Please select a CSV file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    try {
+
+      const res = await fetch("http://localhost:5000/api/upload-students", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      console.log(data);
+
+      alert("Students uploaded successfully");
+
+      window.location.reload();
+
+    } catch (error) {
+      console.error(error);
+      alert("Upload failed");
+    }
+
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -189,9 +221,28 @@ const StudentsPage = () => {
         filterPlaceholder="Department"
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-              <Upload className="h-3.5 w-3.5" /> Upload CSV
-            </Button>
+            <div className="flex items-center gap-2">
+
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setCsvFile(e.target.files[0]);
+                  }
+                }}
+              />
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={uploadCSV}
+              >
+                <Upload className="h-3.5 w-3.5" /> Upload CSV
+              </Button>
+
+            </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 text-xs">

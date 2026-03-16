@@ -1,3 +1,4 @@
+const uploadStudents = require("./routes/uploadStudents");
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
@@ -10,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/students", studentsRoutes);
+app.use("/api", uploadStudents);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
@@ -19,4 +21,60 @@ const PORT = 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/login", (req, res) => {
+
+  const { username, password } = req.body;
+
+  const sql = "SELECT * FROM users WHERE username=? AND password=?";
+
+  db.query(sql, [username, password], (err, result) => {
+
+    if (err) {
+      return res.status(500).json(err);
+    }
+
+    if (result.length === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = result[0];
+
+    res.json({
+      role: user.role,
+      user_id: user.user_id
+    });
+
+  });
+
+});
+
+app.post("/login", (req, res) => {
+
+  const { username, password } = req.body;
+
+  const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+
+  db.query(sql, [username, password], (err, result) => {
+
+    if (err) {
+      return res.status(500).json(err);
+    }
+
+    if (result.length === 0) {
+      return res.status(401).json({
+        message: "Invalid username or password"
+      });
+    }
+
+    const user = result[0];
+
+    res.json({
+      role: user.role,
+      user_id: user.user_id
+    });
+
+  });
+
 });
