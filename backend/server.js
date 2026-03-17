@@ -5,6 +5,7 @@ const db = require("./config/db");
 
 const studentsRoutes = require("./routes/studentsRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
+const classroomRoutes = require("./routes/classroomRoutes");
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/students", studentsRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api", uploadStudents);
+app.use("/api/classrooms", classroomRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
