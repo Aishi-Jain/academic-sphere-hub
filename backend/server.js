@@ -8,6 +8,8 @@ const facultyRoutes = require("./routes/facultyRoutes");
 const classroomRoutes = require("./routes/classroomRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const uploadSubjects = require("./routes/uploadSubjects");
+const examRoutes = require("./routes/examRoutes");
+const uploadSeating = require("./routes/uploadSeating");
 
 const app = express();
 
@@ -20,6 +22,8 @@ app.use("/api", uploadStudents);
 app.use("/api/classrooms", classroomRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/upload-subjects", uploadSubjects);
+app.use("/api/exams", examRoutes);
+app.use("/api/upload-seating", uploadSeating.router);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
