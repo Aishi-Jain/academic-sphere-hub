@@ -4,6 +4,7 @@ const cors = require("cors");
 const db = require("./config/db");
 
 const studentsRoutes = require("./routes/studentsRoutes");
+const facultyRoutes = require("./routes/facultyRoutes");
 
 const app = express();
 
@@ -11,11 +12,15 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/students", studentsRoutes);
+app.use("/api/faculty", facultyRoutes);
 app.use("/api", uploadStudents);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
+
+const uploadFaculty=require("./routes/uploadFaculty");
+app.use("/api",uploadFaculty);
 
 const PORT = 5000;
 
