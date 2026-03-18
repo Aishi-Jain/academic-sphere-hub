@@ -22,7 +22,7 @@ const allItems = [
   { title: "Classrooms", url: "/classrooms", icon: DoorOpen, roles: ['admin'] },
   { title: "Exams", url: "/exams", icon: FileText, roles: ['admin'] },
   { title: "Seating Allocation", url: "/seating", icon: Grid3X3, roles: ['admin', 'student'] },
-  { title: "Marks", url: "/marks", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
+  { title: "Results", url: "/results", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty'] },
   { title: "Circulars", url: "/circulars", icon: Megaphone, roles: ['admin', 'faculty', 'student'] },
   { title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'student'] },

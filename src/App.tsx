@@ -16,6 +16,7 @@ import SubjectsPage from "./pages/SubjectsPage";
 import ClassroomsPage from "./pages/ClassroomsPage";
 import ExamsPage from "./pages/ExamsPage";
 import SeatingPage from "./pages/SeatingPage";
+import ResultsPage from "./pages/ResultsPage";
 import MarksPage from "./pages/MarksPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import CircularsPage from "./pages/CircularsPage";
@@ -54,6 +55,7 @@ function App() {
                   <Route path="/classrooms" element={<ClassroomsPage />} />
                   <Route path="/exams" element={<ExamsPage />} />
                   <Route path="/seating" element={<SeatingPage />} />
+                  <Route path="/results" element={<ResultsPage />} />
                   <Route path="/marks" element={<MarksPage />} />
                   <Route path="/analytics" element={<AnalyticsPage />} />
                   <Route path="/circulars" element={<CircularsPage />} />
