@@ -109,32 +109,62 @@ const SeatingPage = () => {
 
     try {
 
+      // 🔥 STEP 1: GENERATE
       const res = await fetch("http://localhost:5000/api/seating/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
 
       const data = await res.json();
 
-      console.log("RESPONSE:", data); // 🔥 DEBUG
-      console.log("STATUS:", res.status);
-      console.log("DATA:", data);
-
-      if (res.ok) {
-        alert(data.message || "Seating generated!");
-      } else {
-        alert(data.error || "Something went wrong");
+      if (!res.ok) {
+        alert(data.error || "Generation failed");
+        return;
       }
+
+      // 🔥 STEP 2: FETCH GENERATED DATA
+      const fetchRes = await fetch(`http://localhost:5000/api/seating/${selectedExam}`);
+      const seatingData = await fetchRes.json();
+
+      console.log("SEATING DATA:", seatingData);
+
+      // 🔥 STEP 3: FORMAT DATA
+      const grouped: any = {};
+
+      seatingData.forEach((row: any) => {
+
+        if (!grouped[row.room_number]) {
+          grouped[row.room_number] = [];
+        }
+
+        grouped[row.room_number].push({
+          bench: row.bench_number,
+          student1: {
+            roll: row.student1_id,
+          },
+          student2: {
+            roll: row.student2_id,
+          }
+        });
+
+      });
+
+      const formatted = Object.keys(grouped).map(room => ({
+        room,
+        benches: grouped[room]
+      }));
+
+      setAllocations(formatted);
+      setGenerated(true);
+
+      alert("Seating generated successfully!");
 
     } catch (err) {
       console.error(err);
       alert("Server error");
     }
   };
-
   return (
     <div className="space-y-6">
 
@@ -267,11 +297,17 @@ const SeatingPage = () => {
       {generated && (
         <div className="space-y-6">
 
+          {/* HEADER */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">
               Seating Report
             </h3>
-            <Button variant="outline" size="sm">
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+            >
               <Download className="h-3.5 w-3.5" /> Export PDF
             </Button>
           </div>
@@ -285,19 +321,76 @@ const SeatingPage = () => {
               className="stat-card space-y-4"
             >
 
-              <div className="flex justify-between">
-                <h4 className="font-semibold">{alloc.room}</h4>
-                <Badge>{alloc.benches.length * 2} Students</Badge>
+              {/* ROOM HEADER */}
+              <div className="flex justify-between items-center">
+                <h4 className="font-semibold text-foreground">
+                  Room {alloc.room}
+                </h4>
+
+                <Badge variant="secondary">
+                  {alloc.benches.length * 2} Students
+                </Badge>
               </div>
 
-              <div className="grid grid-cols-5 gap-2">
-                {alloc.benches.map(b => (
-                  <div key={b.bench} className="text-xs text-center">
-                    <div>B{b.bench}</div>
-                    <div>{b.student1.dept}</div>
-                    <div>{b.student2.dept}</div>
+              {/* 🔥 VISUAL GRID */}
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                {alloc.benches.map((b) => (
+                  <div key={b.bench} className="text-[10px] text-center space-y-1">
+
+                    <div className="text-muted-foreground">
+                      B{b.bench}
+                    </div>
+
+                    <div className="bg-primary/20 rounded p-1 font-mono text-primary">
+                      {b.student1.roll}
+                    </div>
+
+                    <div className="bg-info/20 rounded p-1 font-mono text-info">
+                      {b.student2.roll}
+                    </div>
+
                   </div>
                 ))}
+              </div>
+
+              {/* 🔥 TABLE VIEW (CLEAN LIKE YOUR DESIGN) */}
+              <div className="overflow-x-auto border border-border rounded-lg">
+
+                <table className="w-full text-xs">
+
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="px-3 py-2 text-left">Bench</th>
+                      <th className="px-3 py-2 text-left">Student 1</th>
+                      <th className="px-3 py-2 text-left">Student 2</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {alloc.benches.map((b) => (
+                      <tr
+                        key={b.bench}
+                        className="border-b border-border last:border-0"
+                      >
+
+                        <td className="px-3 py-2 font-medium">
+                          B{b.bench}
+                        </td>
+
+                        <td className="px-3 py-2 font-mono">
+                          {b.student1.roll}
+                        </td>
+
+                        <td className="px-3 py-2 font-mono">
+                          {b.student2.roll}
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+
+                </table>
+
               </div>
 
             </motion.div>

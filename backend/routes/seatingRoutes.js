@@ -27,7 +27,7 @@ const getDeptFromRoll = (roll) => {
   return deptMap[code] || "UNKNOWN";
 };
 
-// 🔥 MAIN GENERATE API
+// GENERATE API
 router.post("/generate", (req, res) => {
   try {
 
@@ -37,24 +37,37 @@ router.post("/generate", (req, res) => {
 
     const { exam_id, room_ids } = req.body;
 
-    // 🔹 STEP 1: GROUP STUDENTS BY DEPT
-    const deptGroups = {
-      CSE: [], CSM: [], CSD: [], ECE: [], IT: [], AIDS: []
-    };
+    // 🔹 GROUP STUDENTS
+    // 🔥 STEP 1: SPLIT REGULAR & LATERAL
+    const regularStudents = [];
+    const lateralStudents = [];
 
     studentsData.forEach((s) => {
-      const dept = getDeptFromRoll(s.roll);
-      if (deptGroups[dept]) {
-        deptGroups[dept].push(s);
-      }
+    if (s.roll.includes("Q95A")) {
+        lateralStudents.push(s);
+    } else {
+        regularStudents.push(s);
+    }
     });
 
-    // 🔹 STEP 2: SORT EACH DEPT
+    // 🔥 STEP 2: GROUP BY DEPARTMENT
+    const deptGroups = {
+    CSE: [], CSM: [], CSD: [], ECE: [], IT: [], AIDS: []
+    };
+
+    regularStudents.forEach((s) => {
+    const dept = getDeptFromRoll(s.roll);
+    if (deptGroups[dept]) {
+        deptGroups[dept].push(s);
+    }
+    });
+
+    // 🔹 SORT
     Object.keys(deptGroups).forEach(dept => {
       deptGroups[dept].sort((a, b) => a.roll.localeCompare(b.roll));
     });
 
-    // 🔹 STEP 3: FETCH ROOMS
+    // 🔹 FETCH ROOMS
     let roomQuery = "SELECT * FROM classrooms";
 
     if (room_ids && room_ids.length > 0) {
@@ -65,67 +78,148 @@ router.post("/generate", (req, res) => {
       if (err) return res.status(500).json(err);
 
       let allocations = [];
-      let pairIndex = 0;
 
-      // 🔹 STEP 4: POINTERS
-      const pointers = {
-        CSE: 0, CSM: 0, CSD: 0, ECE: 0, IT: 0, AIDS: 0
-      };
+      // 🔥 ORDER (CHAIN)
+      const deptOrder = ["CSE", "CSM", "CSD", "ECE", "IT", "AIDS"];
 
-      // 🔥 STEP 5: ROOM LOOP
-      rooms.forEach((room) => {
+      // 🔥 helper: build dept groups
+      const buildDeptGroups = (list) => {
+        const groups = { CSE: [], CSM: [], CSD: [], ECE: [], IT: [], AIDS: [] };
+        list.forEach(s => {
+            const d = getDeptFromRoll(s.roll);
+            if (groups[d]) groups[d].push(s);
+        });
+        // sort for stability
+        Object.keys(groups).forEach(d =>
+            groups[d].sort((a, b) => a.roll.localeCompare(b.roll))
+        );
+        return groups;
+        };
 
-        for (let bench = 1; bench <= 30; bench++) {
+        // 🔥 helper: progressive chain pairing (NO SKIPS)
+        const progressivePairs = (groups) => {
+        const pairs = [];
 
-          let assigned = false;
+        // 1) Start with first two: CSE ↔ CSM
+        let leftDept = deptOrder[0];   // CSE
+        let rightDept = deptOrder[1];  // CSM
 
-          // Try all pairs
-          for (let i = 0; i < DEPT_PAIRS.length; i++) {
-
-            const [d1, d2] = DEPT_PAIRS[(pairIndex + i) % DEPT_PAIRS.length];
-
-            if (
-              pointers[d1] < deptGroups[d1].length &&
-              pointers[d2] < deptGroups[d2].length
-            ) {
-
-              const s1 = deptGroups[d1][pointers[d1]++];
-              const s2 = deptGroups[d2][pointers[d2]++];
-
-              allocations.push([
-                exam_id,
-                room.id,
-                bench,
-                s1.roll,
-                s2.roll
-              ]);
-
-              pairIndex++;
-              assigned = true;
-              break;
-            }
-          }
-
-          if (!assigned) break; // no more students
+        // pair as much as possible
+        while (groups[leftDept].length && groups[rightDept].length) {
+            pairs.push([groups[leftDept].shift(), groups[rightDept].shift()]);
         }
 
-      });
+        // 2) carry leftovers forward through the chain
+        // leftover from either side continues pairing with next dept in order
+        let carryDept = null;
 
-      // 🔥 STEP 6: INSERT INTO DB
-      const insertQuery = `
-        INSERT INTO seating_allocation 
-        (exam_id, classroom_id, bench_number, student1_id, student2_id)
-        VALUES ?
-      `;
+        if (groups[leftDept].length) carryDept = leftDept;
+        else if (groups[rightDept].length) carryDept = rightDept;
 
-      db.query(insertQuery, [allocations], (err2) => {
-        if (err2) return res.status(500).json(err2);
+        // move through remaining departments
+        for (let i = 2; i < deptOrder.length; i++) {
+            const nextDept = deptOrder[i];
 
-        res.json({
-          message: "Seating generated successfully",
-          total_allocations: allocations.length
+            if (!carryDept) {
+            // if no carry, try pairing adjacent in order
+            const prevDept = deptOrder[i - 1];
+            while (groups[prevDept].length && groups[nextDept].length) {
+                pairs.push([groups[prevDept].shift(), groups[nextDept].shift()]);
+            }
+            // set carry if any leftover
+            if (groups[prevDept].length) carryDept = prevDept;
+            else if (groups[nextDept].length) carryDept = nextDept;
+            continue;
+            }
+
+            // carryDept exists → pair it with nextDept
+            while (groups[carryDept].length && groups[nextDept].length) {
+            pairs.push([groups[carryDept].shift(), groups[nextDept].shift()]);
+            }
+
+            // update carry
+            if (groups[carryDept].length) {
+            // still leftovers in carryDept, continue with next dept
+            continue;
+            } else if (groups[nextDept].length) {
+            carryDept = nextDept; // next becomes new carry
+            } else {
+            carryDept = null; // no leftovers
+            }
+        }
+
+        return pairs;
+        };
+
+        // 🔥 SPLIT REGULAR vs LATERAL
+        const regularStudents = [];
+        const lateralStudents = [];
+
+        studentsData.forEach(s => {
+        if (s.roll.includes("Q95A")) lateralStudents.push(s);
+        else regularStudents.push(s);
         });
-      });
+
+        // 🔥 BUILD GROUPS
+        const regularGroups = buildDeptGroups(regularStudents);
+        const lateralGroups = buildDeptGroups(lateralStudents);
+
+        // 🔥 GENERATE PAIRS (REGULAR FIRST, THEN LATERAL)
+        const regularPairs = progressivePairs(regularGroups);
+        const lateralPairs = progressivePairs(lateralGroups);
+
+        const allPairs = [...regularPairs, ...lateralPairs];
+
+        // 🔥 FILL ROOMS
+        let pairIndex = 0;
+
+        rooms.forEach(room => {
+        for (let bench = 1; bench <= 30; bench++) {
+            if (pairIndex >= allPairs.length) break;
+
+            const [s1, s2] = allPairs[pairIndex++];
+
+            // safety: never same dept
+            if (getDeptFromRoll(s1.roll) === getDeptFromRoll(s2.roll)) {
+            continue; // skip bad pair (should rarely happen)
+            }
+
+            allocations.push([
+            exam_id,
+            room.id,
+            bench,
+            s1.roll,
+            s2.roll
+            ]);
+        }
+        });
+
+      // 🔥 DELETE OLD DATA FIRST
+      db.query(
+        "DELETE FROM seating_allocation WHERE exam_id = ?",
+        [exam_id],
+        (delErr) => {
+
+          if (delErr) return res.status(500).json(delErr);
+
+          // 🔥 INSERT NEW DATA (ONLY ONCE)
+          const insertQuery = `
+            INSERT INTO seating_allocation 
+            (exam_id, classroom_id, bench_number, student1_id, student2_id)
+            VALUES ?
+          `;
+
+          db.query(insertQuery, [allocations], (err2) => {
+            if (err2) return res.status(500).json(err2);
+
+            res.json({
+              message: "Seating generated successfully",
+              total_allocations: allocations.length
+            });
+          });
+
+        }
+      );
 
     });
 

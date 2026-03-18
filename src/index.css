@@ -7,6 +7,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 240 4% 95%;
