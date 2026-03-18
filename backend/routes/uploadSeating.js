@@ -6,21 +6,37 @@ const fs = require("fs");
 
 const upload = multer({ dest: "uploads/" });
 
-let studentsData = []; // temporary storage
+const studentsData = [];
 
 router.post("/", upload.single("file"), (req, res) => {
-  studentsData = [];
+  studentsData.length = 0;
 
   fs.createReadStream(req.file.path)
     .pipe(csv())
     .on("data", (row) => {
-      studentsData.push({
-        roll: row["roll number"],
-        name: row["name"],
-        department: row["department"],
-        year: row["year"],
-        section: row["section"]
+
+      // 🔥 Normalize keys (VERY IMPORTANT)
+      const normalizedRow = {};
+
+      Object.keys(row).forEach(key => {
+        normalizedRow[key.trim().toLowerCase()] = row[key];
       });
+
+      const roll = normalizedRow["roll number"];
+
+      if (!roll) {
+        console.log("❌ Missing roll in row:", normalizedRow);
+        return;
+      }
+
+      studentsData.push({
+        roll: String(roll).trim(),
+        name: (normalizedRow["name"] || "").trim(),
+        department: (normalizedRow["department"] || "").trim(),
+        year: (normalizedRow["year"] || "").trim(),
+        section: (normalizedRow["section"] || "").trim()
+      });
+
     })
     .on("end", () => {
       fs.unlinkSync(req.file.path);

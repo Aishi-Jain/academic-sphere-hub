@@ -94,20 +94,45 @@ const SeatingPage = () => {
     alert("Students CSV uploaded");
   };
 
-  // 🔥 TEMP GENERATE (we'll replace with real algorithm next)
-  const generateSeating = () => {
+  //  GENERATE 
+  const generateSeating = async () => {
 
-    const dummy = rooms.slice(0, 2).map((room: any, index: number) => ({
-      room: room.roomNumber,
-      benches: Array.from({ length: 10 }).map((_, i) => ({
-        bench: i + 1,
-        student1: { name: "Student A", roll: "22XXX01", dept: "CSE" },
-        student2: { name: "Student B", roll: "22XXX02", dept: "CSM" }
-      }))
-    }));
+    if (!selectedExam) {
+      alert("Select exam");
+      return;
+    }
 
-    setAllocations(dummy);
-    setGenerated(true);
+    const body = {
+      exam_id: selectedExam,
+      room_ids: selectedRooms.length === 0 ? [] : selectedRooms
+    };
+
+    try {
+
+      const res = await fetch("http://localhost:5000/api/seating/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      console.log("RESPONSE:", data); // 🔥 DEBUG
+      console.log("STATUS:", res.status);
+      console.log("DATA:", data);
+
+      if (res.ok) {
+        alert(data.message || "Seating generated!");
+      } else {
+        alert(data.error || "Something went wrong");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    }
   };
 
   return (
