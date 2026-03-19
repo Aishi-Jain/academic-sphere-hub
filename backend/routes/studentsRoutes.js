@@ -17,17 +17,17 @@ module.exports = router;
 
 router.post("/", (req, res) => {
 
-  const { name, rollNumber, department, year, semester, section, cgpa } = req.body;
+  const { name, rollNumber, department_id, year, semester, section} = req.body;
 
   const sql = `
   INSERT INTO students
-  (roll_number, name, department_id, year, semester, section, cgpa)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  (roll_number, name, department_id, year, semester, section)
+  VALUES (?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     sql,
-    [rollNumber, name, department, year, semester, section, cgpa],
+    [rollNumber, name, department, year, semester, section],
     (err, result) => {
       if (err) {
         return res.status(500).json(err);
@@ -64,13 +64,13 @@ router.put("/:id", (req, res) => {
 
   const sql = `
     UPDATE students 
-    SET roll_number=?, name=?, department_id=?, year=?, semester=?, section=?, cgpa=?
+    SET roll_number=?, name=?, department_id=?, year=?, semester=?, section=?
     WHERE student_id=?
   `;
 
   db.query(
     sql,
-    [rollNumber, name, department_id, year, semester, section, cgpa, id],
+    [rollNumber, name, department_id, year, semester, section, id],
     (err, result) => {
       if (err) {
         console.log(err);

@@ -4,7 +4,7 @@ const db = require("../config/db");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-// 🔥 SEMESTER CONFIG (R17)
+// 🔥 SEMESTERS
 const semestersList = [
   { sem: "1-1", code: "1662" },
   { sem: "1-2", code: "1704" },
@@ -15,28 +15,26 @@ const semestersList = [
   { sem: "4-1", code: "1948" }
 ];
 
-// 🔥 GRADE → POINT MAP
+// 🔥 GRADE MAP
 const gradeMap = {
-  "O": 10,
+  O: 10,
   "A+": 9,
-  "A": 8,
+  A: 8,
   "B+": 7,
-  "B": 6,
-  "C": 5,
-  "F": 0,
-  "Ab": 0
+  B: 6,
+  C: 5,
+  F: 0,
+  Ab: 0
 };
 
-// 🔥 SGPA CALCULATOR (CORRECT)
+// 🔥 SGPA
 const calculateSGPA = (subjects) => {
   let totalCredits = 0;
   let weightedSum = 0;
 
-  subjects.forEach(sub => {
+  subjects.forEach((sub) => {
     const credits = parseFloat(sub.credits) || 0;
-    const grade = sub.grade?.trim();
-
-    const gradePoint = gradeMap[grade] ?? 0;
+    const gradePoint = gradeMap[sub.grade] ?? 0;
 
     totalCredits += credits;
     weightedSum += credits * gradePoint;
@@ -47,13 +45,29 @@ const calculateSGPA = (subjects) => {
   return (weightedSum / totalCredits).toFixed(2);
 };
 
-// 🔥 FETCH SEM
+// 🔥 DEPT FROM ROLL
+const getBranchFromRoll = (roll) => {
+  const code = roll.substring(6, 8);
+
+  const map = {
+    "05": "CSE",
+    "66": "CSM",
+    "67": "CSD",
+    "04": "ECE",
+    "12": "IT",
+    "72": "AIDS"
+  };
+
+  return map[code] || "Unknown";
+};
+
+// 🔥 FETCH
 const fetchSemester = async (roll, examCode) => {
   const url = "http://results.jntuh.ac.in/resultAction";
 
   const data = new URLSearchParams({
     degree: "btech",
-    examCode: examCode,
+    examCode,
     etype: "r17",
     result: "null",
     grad: "null",
@@ -61,33 +75,17 @@ const fetchSemester = async (roll, examCode) => {
     htno: roll
   });
 
-  const response = await axios.post(url, data, {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    }
+  const res = await axios.post(url, data, {
+    headers: { "Content-Type": "application/x-www-form-urlencoded" }
   });
 
-  return response.data;
+  return res.data;
 };
 
-// 🔥 PARSE HTML
+// 🔥 PARSE
 const parseResult = (html) => {
   const $ = cheerio.load(html);
 
-  const student = {};
-
-  // PERSONAL INFO
-  $("table")
-    .first()
-    .find("tr")
-    .each((i, row) => {
-      const cols = $(row).find("td");
-      if (cols.length > 1) {
-        student[$(cols[0]).text().trim()] = $(cols[1]).text().trim();
-      }
-    });
-
-  // SUBJECTS
   const subjects = [];
 
   $("table")
@@ -110,7 +108,7 @@ const parseResult = (html) => {
       }
     });
 
-  return { student, subjects };
+  return subjects;
 };
 
 // 🔥 MAIN ROUTE
@@ -118,81 +116,68 @@ router.get("/:roll", async (req, res) => {
   const roll = req.params.roll;
 
   try {
-    let allSemesters = [];
-    let studentInfo = {};
+    // ✅ STEP 1: GET STUDENT FROM DB
+    let student = {};
 
-    for (let semObj of semestersList) {
-      try {
+    await new Promise((resolve) => {
+      db.query(
+        "SELECT * FROM students WHERE roll_number = ?",
+        [roll],
+        (err, result) => {
+          if (result && result.length > 0) {
+            student = {
+                name: result[0].name,
+                branch: getBranchFromRoll(roll), 
+                college: "Malla Reddy College of Engineering"
+                };
+          } else {
+            student = {
+              name: "Unknown",
+              branch: getBranchFromRoll(roll),
+              college: "Malla Reddy College of Engineering"
+            };
+          }
+          resolve();
+        }
+      );
+    });
+
+    // ✅ STEP 2: PARALLEL FETCH
+    const results = await Promise.allSettled(
+      semestersList.map(async (semObj) => {
         const html = await fetchSemester(roll, semObj.code);
-        const parsed = parseResult(html);
+        const subjects = parseResult(html);
 
-        if (parsed.subjects.length > 0) {
-          studentInfo = parsed.student;
+        if (subjects.length > 0) {
+          const sgpa = calculateSGPA(subjects);
 
-          // ✅ CORRECT SGPA
-          const sgpa = calculateSGPA(parsed.subjects);
-
-          allSemesters.push({
+          return {
             semester: semObj.sem,
             sgpa,
-            subjects: parsed.subjects
-          });
+            subjects
+          };
         }
-      } catch (err) {
-        console.log("Error in semester:", semObj.sem);
-      }
-    }
+
+        return null;
+      })
+    );
+
+    const allSemesters = results
+      .filter((r) => r.status === "fulfilled" && r.value)
+      .map((r) => r.value);
 
     if (allSemesters.length === 0) {
       return res.status(404).json({ error: "No results found" });
     }
 
-    // 🔥 STORE STUDENT
-    db.query(
-      "INSERT INTO students_results (roll_number, name, branch, college) VALUES (?, ?, ?, ?)",
-      [
-        roll,
-        studentInfo["Name"] || "Unknown",
-        studentInfo["Branch"] || "CSE",
-        studentInfo["College Name"] || "Unknown"
-      ]
-    );
-
-    // 🔥 STORE DATA
-    allSemesters.forEach((sem) => {
-      db.query(
-        "INSERT INTO semesters (roll_number, semester, sgpa) VALUES (?, ?, ?)",
-        [roll, sem.semester, sem.sgpa]
-      );
-
-      sem.subjects.forEach((sub) => {
-        db.query(
-          `INSERT INTO subjects_marks 
-          (roll_number, semester, subject_code, subject_name, internal_marks, external_marks, total_marks, grade, credits)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            roll,
-            sem.semester,
-            sub.code,
-            sub.name,
-            sub.internal,
-            sub.external,
-            sub.total,
-            sub.grade,
-            sub.credits
-          ]
-        );
-      });
-    });
-
-    return res.json({
-      message: "Fetched REAL data",
-      student: studentInfo,
+    // ✅ FINAL RESPONSE
+    res.json({
+      student,
       semesters: allSemesters
     });
 
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ error: "Server error" });
   }
 });

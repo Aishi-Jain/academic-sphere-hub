@@ -18,27 +18,44 @@ router.post("/upload-students", upload.single("file"), (req, res) => {
 
       for (const row of results) {
 
-        const {
-          roll_number,
-          name,
-          department_id,
-          year,
-          semester,
-          section,
-          cgpa
-        } = row;
+        const cleanRow = {};
+        Object.keys(row).forEach(key => {
+          cleanRow[key.trim()] = row[key];
+        });
+
+        const roll_number = cleanRow.roll_number;
+        const name = cleanRow.name;
+        const department_id = cleanRow.department_id;
+        const year = cleanRow.year;
+        const semester = cleanRow.semester;
+        const section = cleanRow.section;
+
+        console.log(row);
 
         try {
 
+          // CHECK IF STUDENT EXISTS
+          const existing = await db.promise().query(
+            "SELECT * FROM students WHERE roll_number = ?",
+            [roll_number]
+          );
+
+          if (existing[0].length > 0) {
+            console.log("Already exists:", roll_number);
+            continue;
+          }
+
+          //INSERT STUDENT
           const studentResult = await db.promise().query(
             `INSERT INTO students 
-            (roll_number,name,department_id,year,semester,section,cgpa)
-            VALUES (?,?,?,?,?,?,?)`,
-            [roll_number,name,department_id,year,semester,section,cgpa]
+            (roll_number,name,department_id,year,semester,section)
+            VALUES (?,?,?,?,?,?)`,
+            [roll_number,name,department_id,year,semester,section]
           );
 
           const student_id = studentResult[0].insertId;
 
+          //INSERT USER
           await db.promise().query(
             `INSERT INTO users (username,password,role,reference_id)
              VALUES (?,?,?,?)`,

@@ -98,7 +98,7 @@ const ResultsPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-gray-400 text-sm">Student Name</p>
-                <p className="font-semibold">{data.student.Name}</p>
+                <p className="font-semibold">{data.student.name}</p>
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Roll Number</p>
@@ -106,11 +106,13 @@ const ResultsPage = () => {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Branch</p>
-                <p className="font-semibold">{data.student.Branch}</p>
+                <p className="font-semibold">{data.student.branch}</p>
               </div>
               <div>
                 <p className="text-gray-400 text-sm">College</p>
-                <p className="font-semibold">{data.student["College Name"]}</p>
+                <p>
+                    {data.student["College Name"] || "Malla Reddy College of Engineering"}
+                </p>
               </div>
             </div>
           </div>
@@ -163,6 +165,7 @@ const ResultsPage = () => {
                     <th>Ext</th>
                     <th>Total</th>
                     <th>Grade</th>
+                    <th>Credits</th>
                   </tr>
                 </thead>
 
@@ -181,13 +184,14 @@ const ResultsPage = () => {
                       </td>
                       <td className="text-center">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${gradeColor(
+                          className={`px-3 py-1 rounded-full text-xs font-semibold shadow-md ${gradeColor(
                             sub.grade
                           )}`}
                         >
                           {sub.grade}
                         </span>
                       </td>
+                      <td className="text-center">{sub.credits}</td>
                     </tr>
                   ))}
                 </tbody>

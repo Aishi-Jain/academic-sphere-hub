@@ -21,7 +21,7 @@ const StudentsPage = () => {
   const [section, setSection] = useState("");
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
-  const [cgpa, setCgpa] = useState("");
+  //const [cgpa, setCgpa] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const StudentsPage = () => {
           student_id: s.student_id,
           rollNumber: s.roll_number,
           name: s.name,
-          department: s.department_id,
+          department: String(s.department_id),
           year: s.year,
           semester: s.semester,
           section: s.section,
@@ -61,7 +61,7 @@ const StudentsPage = () => {
         year,
         semester,
         section,
-        cgpa: 0
+        //cgpa: 0
       })
     });
 
@@ -75,10 +75,10 @@ const StudentsPage = () => {
 
   const columns = [
   {
-    key: 'rollNumber',
+    key: 'roll_number',
     header: 'Roll Number',
     render: (s:any) => (
-      <span className="font-mono text-xs">{s.rollNumber}</span>
+      <span className="font-mono text-xs">{s.rollNumber || s.roll_number}</span>
     )
   },
     { key: 'name', header: 'Name' },
@@ -94,7 +94,7 @@ const StudentsPage = () => {
     { key: 'year', header: 'Year' },
     { key: 'semester', header: 'Semester' },
     { key: 'section', header: 'Section' },
-    { key: 'cgpa', header: 'CGPA', render: (s: any) => <span className="font-medium">{s.cgpa}</span> },
+    //{ key: 'cgpa', header: 'CGPA', render: (s: any) => <span className="font-medium">{s.cgpa}</span> },
     {
       key: 'actions', header: 'Actions',
       render: (s:any) => (
@@ -107,12 +107,12 @@ const StudentsPage = () => {
               setEditingId(s.student_id);
 
               setName(s.name);
-              setRollNumber(s.rollNumber);
-              setDepartment(s.department_id);
+              setRollNumber(s.roll_number);
+              setDepartment(s.department);
               setYear(s.year);
               setSemester(s.semester);
               setSection(s.section);
-              setCgpa(s.cgpa);
+              //setCgpa(s.cgpa);
 
               setOpen(true);
             }}
@@ -134,7 +134,7 @@ const StudentsPage = () => {
 
   const filterOptions = departments.map(d => ({
     label: deptShortNames[d.name],
-    value: d.name,
+    value: String(d.id),
   }));
 
   const deleteStudent = async (id:any) => {
@@ -160,7 +160,7 @@ const StudentsPage = () => {
         year,
         semester,
         section,
-        cgpa
+        //cgpa
       })
     });
 
