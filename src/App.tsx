@@ -1,10 +1,12 @@
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RoleProvider } from "@/lib/role-context";
-import { AppLayout } from "@/components/AppLayout";
+import  AppLayout from "@/components/AppLayout";
 
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
@@ -28,7 +30,7 @@ const queryClient = new QueryClient();
 
 function App() {
 
-  const role = localStorage.getItem("role");
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -37,36 +39,33 @@ function App() {
         <Sonner />
         <RoleProvider>
           <BrowserRouter>
+            <Routes>
 
-            {!role ? (
+              {/* LOGIN */}
+              <Route path="/login" element={<LoginPage />} />
 
-              <LoginPage />
+              {/* PAGES WITH LAYOUT */}
+              <Route path="/" element={<AppLayoutWrapper />}>
+                
+                <Route index element={<HomePage />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="students" element={<StudentsPage />} />
+                <Route path="faculty" element={<FacultyPage />} />
+                <Route path="departments" element={<DepartmentsPage />} />
+                <Route path="subjects" element={<SubjectsPage />} />
+                <Route path="classrooms" element={<ClassroomsPage />} />
+                <Route path="exams" element={<ExamsPage />} />
+                <Route path="seating" element={<SeatingPage />} />
+                <Route path="results" element={<ResultsPage />} />
+                <Route path="marks" element={<MarksPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="circulars" element={<CircularsPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
 
-            ) : (
+              </Route>
 
-              <AppLayout>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/students" element={<StudentsPage />} />
-                  <Route path="/faculty" element={<FacultyPage />} />
-                  <Route path="/departments" element={<DepartmentsPage />} />
-                  <Route path="/subjects" element={<SubjectsPage />} />
-                  <Route path="/classrooms" element={<ClassroomsPage />} />
-                  <Route path="/exams" element={<ExamsPage />} />
-                  <Route path="/seating" element={<SeatingPage />} />
-                  <Route path="/results" element={<ResultsPage />} />
-                  <Route path="/marks" element={<MarksPage />} />
-                  <Route path="/analytics" element={<AnalyticsPage />} />
-                  <Route path="/circulars" element={<CircularsPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AppLayout>
-
-            )}
-
+            </Routes>
           </BrowserRouter>
         </RoleProvider>
       </TooltipProvider>

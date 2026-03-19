@@ -4,41 +4,60 @@ const LoginPage = () => {
 
   const [username,setUsername] = useState("");
   const [password,setPassword] = useState("");
+  const [error,setError] = useState("");
 
   const handleLogin = async () => {
 
-    const res = await fetch("http://localhost:5000/login",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({
-        username,
-        password
-      })
-    });
+    try {
+      const res = await fetch("http://localhost:5000/login",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    localStorage.setItem("role", data.role);
-    localStorage.setItem("user_id", data.user_id);
+      // ❗ Check if login failed
+      if(!res.ok){
+        setError(data.message || "Login failed");
+        return;
+      }
 
-    window.location.href = "/";
+      // ✅ Store full user object
+      localStorage.setItem("user", JSON.stringify({
+        id: data.user_id,
+        role: data.role,
+        username: data.username,
+        reference_id: data.reference_id
+      }));
 
-    if(data.role === "faculty"){
-      window.location.href="/faculty";
+      // ✅ Role-based redirect (ONLY ONE)
+      if(data.role === "admin"){
+        window.location.href = "/";
+      } 
+      else if(data.role === "faculty"){
+        window.location.href = "/dashboard";
+      } 
+      else if(data.role === "student"){
+        window.location.href = "/dashboard";
+      }
+
+    } catch (err) {
+      setError("Server error. Try again.");
     }
-
-    if(data.role === "student"){
-      window.location.href="/student";
-    }
-
   };
 
   return (
     <div style={{padding:"40px"}}>
 
       <h2>Academic Sphere Login</h2>
+
+      {error && <p style={{color:"red"}}>{error}</p>}
 
       <input
         placeholder="Username"

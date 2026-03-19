@@ -32,7 +32,8 @@ const allItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { role } = useRole();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const role = user?.role;
   const location = useLocation();
 
   const items = allItems.filter(item => item.roles.includes(role));
