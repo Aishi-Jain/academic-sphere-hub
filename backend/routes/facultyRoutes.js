@@ -25,19 +25,38 @@ module.exports = router;
 // ADD faculty
 router.post("/", (req, res) => {
 
-  const { name, email, department_id } = req.body;
+  const { faculty_id, name, email, department_id, designation } = req.body;
+
+  console.log("REQ BODY:", req.body);
 
   const sql = `
-    INSERT INTO faculty (name, email, department_id)
-    VALUES (?, ?, ?)
+    INSERT INTO faculty (faculty_id, name, email, department_id, designation)
+    VALUES (?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [name, email, department_id], (err, result) => {
+  db.query(sql, [faculty_id, name, email, department_id, designation], (err, result) => {
+
     if (err) {
       console.log(err);
-      return res.json(err);
+      return res.status(500).json(err);
     }
-    res.json("Faculty added");
+
+    // 🔥 CREATE USER (IMPORTANT)
+    const userSql = `
+      INSERT INTO users (username, password, role, reference_id)
+      VALUES (?, ?, 'faculty', ?)
+    `;
+
+    db.query(userSql, [name, name, faculty_id], (err2, result2) => {
+      if (err2) {
+        console.log("❌ USER CREATION ERROR:", err2);
+      } else {
+        console.log("✅ USER CREATED:", result2);
+      }
+    });
+
+    res.json("Faculty added + user created");
+
   });
 
 });
@@ -46,19 +65,21 @@ router.post("/", (req, res) => {
 // UPDATE faculty
 router.put("/:id", (req, res) => {
 
-  const { name, email, department_id } = req.body;
+  const { name, email, department_id, designation } = req.body;
+
+  console.log("UPDATE HIT:", req.params.id, req.body);
 
   console.log("UPDATE HIT:", req.params.id, req.body);
 
   const sql = `
     UPDATE faculty 
-    SET name = ?, email = ?, department_id = ?
-    WHERE faculty_id = ?
+    SET name=?, email=?, department_id=?, designation=?
+    WHERE faculty_id=?
   `;
 
   db.query(
     sql,
-    [name, email, department_id, req.params.id],  // ✅ FIX HERE
+    [name, email, department_id, designation, req.params.id],
     (err, result) => {
 
       if (err) {

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const HomePage = () => {
-  const { role } = useRole();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const role = user?.role;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6">

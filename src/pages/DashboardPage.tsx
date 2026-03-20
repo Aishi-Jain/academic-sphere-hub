@@ -17,7 +17,8 @@ const chartColors = [
 ];
 
 const DashboardPage = () => {
-  const { role } = useRole();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const role = user?.role;
 
   const deptBarData = {
     labels: departmentDistribution.map(d => d.name),

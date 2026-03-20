@@ -18,6 +18,8 @@ const FacultyPage = () => {
   const [email, setEmail] = useState("");
   const [department, setDepartment] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [facultyId, setFacultyId] = useState("");
+  const [designation, setDesignation] = useState("");
 
   useEffect(() => {
 
@@ -26,10 +28,12 @@ const FacultyPage = () => {
       .then(data => {
 
         const formatted = data.map((f:any) => ({
-          id: f.faculty_id,   // ✅ IMPORTANT CHANGE
+          id: f.faculty_id,
+          faculty_id: f.faculty_id,
           name: f.name,
           email: f.email,
-          department: String(f.department_id)
+          department: String(f.department_id),
+          designation: f.designation
         }));
 
         console.log("Faculty Data:", formatted);
@@ -51,7 +55,7 @@ const FacultyPage = () => {
     {
       key: 'id',
       header: 'Faculty ID',
-      render: (f:any) => <span>{f.faculty_id}</span>
+      render: (f:any) => <span>{f.id}</span>
     },
 
     {
@@ -72,6 +76,14 @@ const FacultyPage = () => {
     },
 
     {
+      key: 'designation',
+      header: 'Designation',
+      render: (f:any) => (
+        <Badge variant="outline">{f.designation}</Badge>
+      )
+    },
+
+    {
       key: 'actions',
       header: 'Actions',
       render: (f:any) => (
@@ -87,9 +99,11 @@ const FacultyPage = () => {
 
               setEditingId(f.id);
 
+              setFacultyId(f.id);
               setName(f.name || "");
               setEmail(f.email || "");
               setDepartment(String(f.department || ""));
+              setDesignation(f.designation || "");
 
               setOpen(true);
             }}
@@ -113,15 +127,25 @@ const FacultyPage = () => {
 
   const addFaculty = async () => {
 
+    console.log("ADDING:", {
+      facultyId,
+      name,
+      email,
+      department,
+      designation
+    });
+
     await fetch("http://localhost:5000/api/faculty", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        faculty_id: facultyId,
         name,
         email,
-        department_id: department
+        department_id: department,
+        designation
       })
     });
 
@@ -141,6 +165,12 @@ const FacultyPage = () => {
   const updateFaculty = async (id:any) => {
 
     console.log("Sending update for:", id);
+    console.log("UPDATE PAYLOAD:", {
+      name,
+      email,
+      department,
+      designation
+    });
 
     await fetch(`http://localhost:5000/api/faculty/${id}`, {
       method: "PUT",
@@ -150,7 +180,8 @@ const FacultyPage = () => {
       body: JSON.stringify({
         name,
         email,
-        department_id: department
+        department_id: department,
+        designation
       })
     });
 
@@ -198,11 +229,11 @@ const FacultyPage = () => {
         data={faculty}
         columns={columns}
         searchKey="name"
-        //filterKey="department"
-        //filterOptions={departments.map(d => ({
-          //label: deptShortNames[d.name],
-          //value: d.id   // ✅ IMPORTANT
-        //}))}
+        filterKey="department"
+        filterOptions={departments.map(d => ({
+          label: deptShortNames[d.name],
+          value: d.id  
+        }))}
 
         actions={
 
@@ -282,8 +313,36 @@ const FacultyPage = () => {
 
                   </div>
 
+                  <div className="grid gap-2">
+                    <Label>Faculty ID</Label>
+                    <Input
+                      value={facultyId}
+                      onChange={(e)=>setFacultyId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Designation</Label>
+
+                    <Select value={designation} onValueChange={setDesignation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select designation" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="HOD">HOD</SelectItem>
+                        <SelectItem value="Professor">Professor</SelectItem>
+                        <SelectItem value="Associate Professor">Associate Professor</SelectItem>
+                        <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
+                        <SelectItem value="Lab Incharge">Lab Incharge</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <Button
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
 
                       console.log("editingId:", editingId);
 
