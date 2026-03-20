@@ -13,6 +13,7 @@ const uploadSeating = require("./routes/uploadSeating");
 const seatingRoutes = require("./routes/seatingRoutes");
 const resultsRoutes = require("./routes/resultsRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const circularRoutes = require("./routes/circularRoutes");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/upload-seating", uploadSeating.router);
 app.use("/api/seating", seatingRoutes);
 app.use("/api/results", resultsRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/circulars", circularRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
