@@ -19,12 +19,20 @@ const ResultsPage = () => {
 
   const calculateCGPA = () => {
     if (!data) return 0;
-    const total = data.semesters.reduce(
-      (sum: number, sem: any) => sum + parseFloat(sem.sgpa),
-      0
+
+    const hasFail = data.semesters.some(
+        (sem: any) => parseFloat(sem.sgpa) === 0
     );
+
+    if (hasFail) return "Fail";
+
+    const total = data.semesters.reduce(
+        (sum: number, sem: any) => sum + parseFloat(sem.sgpa),
+        0
+    );
+
     return (total / data.semesters.length).toFixed(2);
-  };
+ };
 
   const getBacklogs = () => {
     if (!data) return [];
@@ -123,7 +131,11 @@ const ResultsPage = () => {
             <div className="bg-blue-900/30 p-6 rounded-xl border border-blue-500/20 shadow-lg">
               <p className="text-gray-400">CGPA</p>
               <h2 className="text-3xl font-bold text-blue-400">
-                {calculateCGPA()}
+                {calculateCGPA() === "Fail" ? (
+                    <span className="text-red-400">Fail</span>
+                ) : (
+                    calculateCGPA()
+                )}
               </h2>
             </div>
 
@@ -153,7 +165,13 @@ const ResultsPage = () => {
                 <h3 className="text-xl font-semibold text-blue-400">
                   Semester {sem.semester}
                 </h3>
-                <span className="text-gray-300">SGPA: {sem.sgpa}</span>
+                <span className="text-gray-300">
+                    SGPA: {parseFloat(sem.sgpa) === 0 ? (
+                        <span className="text-red-400 font-semibold">Fail</span>
+                    ) : (
+                        sem.sgpa
+                    )}
+                </span>
               </div>
 
               <table className="w-full text-sm">

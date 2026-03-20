@@ -32,9 +32,11 @@ const calculateSGPA = (subjects) => {
   let totalCredits = 0;
   let weightedSum = 0;
 
-  subjects.forEach((sub) => {
+  subjects.forEach(sub => {
     const credits = parseFloat(sub.credits) || 0;
-    const gradePoint = gradeMap[sub.grade] ?? 0;
+    const grade = sub.grade?.trim();
+
+    const gradePoint = gradeMap[grade] ?? 0;
 
     totalCredits += credits;
     weightedSum += credits * gradePoint;
@@ -95,17 +97,30 @@ const parseResult = (html) => {
     .each((i, row) => {
       const cols = $(row).find("td");
 
-      if (cols.length > 0) {
+        // 🔥 CLEAN FUNCTIONS (ADD ABOVE subjects.push)
+        const cleanNumber = (val) => {
+            if (!val) return 0;
+            const v = val.trim();
+            return v === "-" ? 0 : parseFloat(v) || 0;
+        };
+
+        const cleanGrade = (val) => {
+            if (!val) return "F";
+            const v = val.trim().toUpperCase();
+            if (v === "ABSENT") return "AB";
+            return v === "-" ? "F" : v;
+        };
+
+            // 🔥 PUSH CLEAN DATA
         subjects.push({
-          code: $(cols[0]).text().trim(),
-          name: $(cols[1]).text().trim(),
-          internal: $(cols[2]).text().trim(),
-          external: $(cols[3]).text().trim(),
-          total: $(cols[4]).text().trim(),
-          grade: $(cols[5]).text().trim(),
-          credits: $(cols[6]).text().trim()
+            code: $(cols[0]).text().trim(),
+            name: $(cols[1]).text().trim(),
+            internal: cleanNumber($(cols[2]).text()),
+            external: cleanNumber($(cols[3]).text()),
+            total: cleanNumber($(cols[4]).text()),
+            grade: cleanGrade($(cols[5]).text()),
+            credits: $(cols[6]).text().trim()
         });
-      }
     });
 
   return subjects;
@@ -149,7 +164,19 @@ router.get("/:roll", async (req, res) => {
         const subjects = parseResult(html);
 
         if (subjects.length > 0) {
-          const sgpa = calculateSGPA(subjects);
+          // 🔥 CHECK FAIL CONDITION
+        const hasFail = subjects.some((sub) => {
+        const grade = (sub.grade || "").trim().toUpperCase();
+        return grade === "F" || grade === "AB";
+        });
+
+        let sgpa;
+
+        if (hasFail) {
+            sgpa = 0; // 🔥 store as number
+        } else {
+            sgpa = calculateSGPA(subjects);
+        }
 
           return {
             semester: semObj.sem,
@@ -166,8 +193,59 @@ router.get("/:roll", async (req, res) => {
       .filter((r) => r.status === "fulfilled" && r.value)
       .map((r) => r.value);
 
+    // 🔥 STORE DATA IN DB (NEW)
+    for (const sem of allSemesters) {
+    // ✅ Check if already exists (avoid duplicate)
+    const [existing] = await db.promise().query(
+        "SELECT id FROM results WHERE roll_number = ? AND semester = ?",
+        [roll, sem.semester]
+    );
+
+    let resultId;
+
+    if (existing.length > 0) {
+        resultId = existing[0].id;
+    } else {
+        const [resultInsert] = await db.promise().query(
+        "INSERT INTO results (roll_number, semester, sgpa) VALUES (?, ?, ?)",
+        [roll, sem.semester, sem.sgpa]
+        );
+
+        resultId = resultInsert.insertId;
+    }
+
+    // delete old subjects for this result (avoid duplicates)
+    await db.promise().query(
+    "DELETE FROM result_subjects WHERE result_id = ?",
+    [resultId]
+    );
+
+    // 🔥 Insert subjects
+    for (const sub of sem.subjects) {
+        await db.promise().query(
+            `INSERT INTO result_subjects 
+            (result_id, subject_code, subject_name, internal, external, total, grade, credits)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+            resultId,
+            sub.code,
+            sub.name,
+            sub.internal,
+            sub.external,
+            sub.total,
+            sub.grade,
+            sub.credits
+            ]
+        );
+    }
+    }
+
     if (allSemesters.length === 0) {
-      return res.status(404).json({ error: "No results found" });
+        return res.json({
+            student,
+            semesters: [],
+            message: "No results found"
+        });
     }
 
     // ✅ FINAL RESPONSE
