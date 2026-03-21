@@ -52,6 +52,56 @@ const SeatingPage = () => {
   }, []);
 
   useEffect(() => {
+    if (!selectedExam) return;
+
+    const fetchSeating = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/seating/${selectedExam}`);
+        const seatingData = await res.json();
+
+        if (!seatingData || seatingData.length === 0) {
+          setGenerated(false);
+          return;
+        }
+
+        const grouped: any = {};
+
+        seatingData.forEach((row: any) => {
+          if (!grouped[row.room_number]) {
+            grouped[row.room_number] = [];
+          }
+
+          grouped[row.room_number].push({
+            bench: row.bench_number,
+            student1: { roll: row.student1_id },
+            student2: { roll: row.student2_id }
+          });
+        });
+
+        const formatted = Object.keys(grouped).map(room => ({
+          room,
+          benches: grouped[room]
+        }));
+
+        setAllocations(formatted);
+        setGenerated(true);
+
+      } catch (err) {
+        console.error("Error fetching seating:", err);
+      }
+    };
+
+    fetchSeating();
+  }, [selectedExam]);
+
+  useEffect(() => {
+    const savedExam = localStorage.getItem("selectedExam");
+    if (savedExam) {
+      setSelectedExam(savedExam);
+    }
+  }, []);
+
+  useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
@@ -192,7 +242,13 @@ const SeatingPage = () => {
           {/* EXAM */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Exam</label>
-            <Select value={selectedExam} onValueChange={setSelectedExam}>
+            <Select
+              value={selectedExam}
+              onValueChange={(value) => {
+                setSelectedExam(value);
+                localStorage.setItem("selectedExam", value);
+              }}
+            >
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="Select Exam" />
               </SelectTrigger>
