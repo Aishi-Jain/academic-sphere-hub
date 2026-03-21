@@ -16,6 +16,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const circularRoutes = require("./routes/circularRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const profileUpload = require("./routes/profileUpload");
+const deptStats = require("./routes/departmentsStats");
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/circulars", circularRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api", profileUpload);
+app.use("/api/departments-stats", deptStats);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

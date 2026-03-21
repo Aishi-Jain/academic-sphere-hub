@@ -37,15 +37,79 @@ const HomePage = () => {
     <div className="p-6 space-y-10">
 
       <div className="flex flex-col items-center text-center space-y-6">
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <h1 className="text-4xl font-bold">Academic Sphere</h1>
+          <h1 className="text-5xl font-bold tracking-tight">Academic Sphere</h1>
           <p className="text-muted-foreground">
             Logged in as {role}
           </p>
         </motion.div>
+        
+        {/* 🔥 NEW PROJECT DESCRIPTION */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="max-w-2xl text-center space-y-2"
+        >
+          <p className="text-sm text-muted-foreground">
+            Academic Sphere is a centralized academic management platform designed to streamline
+            student data, faculty operations, examinations, analytics, and seating allocation.
+            It enables administrators, faculty, and students to efficiently manage and access
+            academic information in one place.
+          </p>
+        </motion.div>
+
+        {/* 🔥 KEY FEATURES HEADING */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mt-4"
+        >
+          <h2 className="text-lg font-semibold">Key Features</h2>
+        </motion.div>
+
+        {/* 🔥 FEATURE CARDS */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-4xl"
+        >
+
+          {/* Academic */}
+          <div className="stat-card text-center space-y-2">
+            <GraduationCap className="mx-auto h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">Academic Management</p>
+            <p className="text-xs text-muted-foreground">
+              Manage students, faculty, departments, and subjects seamlessly
+            </p>
+          </div>
+
+          {/* Seating Allocation (NEW 🔥) */}
+          <div className="stat-card text-center space-y-2">
+            <ArrowRight className="mx-auto h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">Seating Allocation</p>
+            <p className="text-xs text-muted-foreground">
+              Automatically generate exam seating arrangements efficiently
+            </p>
+          </div>
+
+          {/* Analytics */}
+          <div className="stat-card text-center space-y-2">
+            <ArrowRight className="mx-auto h-5 w-5 text-primary" />
+            <p className="text-sm font-medium">Analytics & Insights</p>
+            <p className="text-xs text-muted-foreground">
+              Track performance, trends, and academic insights across semesters
+            </p>
+          </div>
+
+        </motion.div>
+
       </div>
 
       <div>

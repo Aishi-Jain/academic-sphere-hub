@@ -1,9 +1,20 @@
-import { departments, deptShortNames, students, faculty } from "@/lib/mock-data";
+import { departments, deptShortNames } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { Building2, Users, GraduationCap } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const DepartmentsPage = () => {
+
+  const [deptStats, setDeptStats] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/departments-stats")
+      .then(res => res.json())
+      .then(data => setDeptStats(data))
+      .catch(err => console.error(err));
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -12,8 +23,10 @@ const DepartmentsPage = () => {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {departments.map((dept, i) => {
-          const studentCount = students.filter(s => s.department === dept.name).length;
-          const facultyCount = faculty.filter(f => f.department === dept.name).length;
+          const stats = deptStats.find(d => d.department_name === dept.name);
+
+          const studentCount = stats?.studentCount || 0;
+          const facultyCount = stats?.facultyCount || 0;
           return (
             <motion.div key={dept.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="stat-card space-y-3">
               <div className="flex items-center justify-between">

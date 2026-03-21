@@ -74,14 +74,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
               
 
-              <Link to="/notifications">
+              {/*<Link to="/notifications">
                 <Button variant="ghost" size="icon" className="relative h-8 w-8">
                   <Bell className="h-4 w-4" />
                   <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[9px]">
                     3
                   </Badge>
                 </Button>
-              </Link>
+              </Link>*/}
 
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                 {role === "admin" ? "AD" : role === "faculty" ? "FC" : "ST"}
