@@ -87,6 +87,7 @@ router.get("/top-students", async (req, res) => {
       FROM results r
       JOIN students s ON s.roll_number = r.roll_number
       WHERE r.semester = ?
+      AND r.sgpa > 0   
       ORDER BY r.sgpa DESC
       LIMIT 30
     `, [sem]);
