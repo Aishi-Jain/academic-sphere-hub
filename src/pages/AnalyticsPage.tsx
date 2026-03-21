@@ -83,7 +83,6 @@ const AnalyticsPage = () => {
   return (
     <div className="space-y-6">
 
-      <h1 className="text-2xl font-bold">Analytics</h1>
 
       {/* MODE */}
       <div className="flex gap-3">
@@ -119,6 +118,27 @@ const AnalyticsPage = () => {
                 <Doughnut data={pfChart}/>
               </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+
+            {topStudents.slice(0,3).map((s:any,i:number)=>(
+              <div key={i} className="stat-card text-center">
+
+                <div className="text-2xl">
+                  {i===0?"🥇":i===1?"🥈":"🥉"}
+                </div>
+
+                <h3 className="font-semibold mt-2">{s.name}</h3>
+                <p className="text-sm text-gray-400">{s.roll_number}</p>
+
+                <p className="text-green-400 text-lg mt-2">
+                  {mode==="current"?s.sgpa:Number(s.cgpa).toFixed(2)}
+                </p>
+
+              </div>
+            ))}
+
           </div>
 
           {/* TOP 30 */}

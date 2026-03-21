@@ -51,6 +51,15 @@ router.get("/overall", async (req, res) => {
       GROUP BY s.department_id
     `, [sem]);
 
+    const bestDept = dept.sort((a,b)=>b.pass_percentage - a.pass_percentage)[0];
+    const worstDept = dept.sort((a,b)=>a.pass_percentage - b.pass_percentage)[0];
+
+    const insights = [
+        `Top performing department: ${bestDept.department_id} (${bestDept.pass_percentage}%)`,
+        `Lowest performing department: ${worstDept.department_id} (${worstDept.pass_percentage}%)`,
+        `Total students: ${total[0]?.total || total}`,
+    ];
+
     res.json({
       totalStudents: total[0].total,
       passPercentage: ((pf[0].passed / pf[0].total) * 100).toFixed(2),
@@ -108,6 +117,15 @@ router.get("/overall-all", async (req, res) => {
       JOIN students s ON s.roll_number = r.roll_number
       GROUP BY s.department_id
     `);
+
+    const bestDept = dept.sort((a,b)=>b.pass_percentage - a.pass_percentage)[0];
+    const worstDept = dept.sort((a,b)=>a.pass_percentage - b.pass_percentage)[0];
+
+    const insights = [
+        `Top performing department: ${bestDept.department_id} (${bestDept.pass_percentage}%)`,
+        `Lowest performing department: ${worstDept.department_id} (${worstDept.pass_percentage}%)`,
+        `Total students: ${total[0]?.total || total}`,
+    ];
 
     res.json({
       totalStudents: total,
