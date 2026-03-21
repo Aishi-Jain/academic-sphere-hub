@@ -1,6 +1,20 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ storage });
 
 // 🔥 GET ALL CIRCULARS
 router.get("/", (req, res) => {
@@ -14,21 +28,21 @@ router.get("/", (req, res) => {
 });
 
 // 🔥 ADD CIRCULAR
-router.post("/", (req, res) => {
+router.post("/", upload.single("file"), (req, res) => {
   const { title, description, department_id } = req.body;
+  const file = req.file ? req.file.filename : null;
 
   const sql = `
-    INSERT INTO circulars (title, description, department_id)
-    VALUES (?, ?, ?)
+    INSERT INTO circulars (title, description, department_id, file)
+    VALUES (?, ?, ?, ?)
   `;
 
-  db.query(sql, [title, description, department_id], (err, result) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).json(err);
-    }
+  console.log(req.body);
+  console.log(req.file);
 
-    res.json("Circular added");
+  db.query(sql, [title, description, department_id, file], (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json("Circular added with file");
   });
 });
 

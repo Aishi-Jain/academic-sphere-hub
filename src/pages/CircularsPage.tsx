@@ -35,8 +35,8 @@ const CircularsPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
+  const [file, setFile] = useState<File | null>(null);
 
-  // 🔥 FETCH DATA
   const fetchCirculars = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/circulars");
@@ -50,27 +50,37 @@ const CircularsPage = () => {
     fetchCirculars();
   }, []);
 
-  // 🔥 ADD
   const addCircular = async () => {
     try {
-      await axios.post("http://localhost:5000/api/circulars", {
-        title,
-        description,
-        department_id: department
+      if (!title || !description || !department) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("department_id", department);
+      if (file) formData.append("file", file);
+
+      await axios.post("http://localhost:5000/api/circulars", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
       });
 
       setOpen(false);
       setTitle("");
       setDescription("");
       setDepartment("");
+      setFile(null);
 
       fetchCirculars();
     } catch (err) {
-      console.error("Error adding circular");
+      console.error("Error adding circular", err);
     }
   };
 
-  // 🔥 DELETE
   const deleteCircular = async (id: number) => {
     try {
       await axios.delete(`http://localhost:5000/api/circulars/${id}`);
@@ -78,6 +88,14 @@ const CircularsPage = () => {
     } catch (err) {
       console.error("Delete failed");
     }
+  };
+
+  const getDeptShortName = (deptId: any) => {
+    if (deptId === "global") return "Global";
+    const dept = departments.find(
+      (d) => String(d.id) === String(deptId)
+    );
+    return dept ? deptShortNames[dept.name] : deptId;
   };
 
   return (
@@ -90,7 +108,6 @@ const CircularsPage = () => {
           <p className="page-description">Announcements and notices</p>
         </div>
 
-        {/* 🔥 ADD BUTTON */}
         {role === "admin" && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -106,35 +123,36 @@ const CircularsPage = () => {
 
               <div className="grid gap-4 py-4">
 
-                {/* TITLE */}
                 <div className="grid gap-2">
                   <Label>Title</Label>
                   <Input
-                    placeholder="Enter title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
 
-                {/* DESCRIPTION */}
                 <div className="grid gap-2">
                   <Label>Description</Label>
                   <Input
-                    placeholder="Enter description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
 
-                {/* DEPARTMENT */}
+                <div className="grid gap-2">
+                  <Label>Attachment</Label>
+                  <Input
+                    type="file"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+
                 <div className="grid gap-2">
                   <Label>Department</Label>
-
                   <Select onValueChange={setDepartment}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
-
                     <SelectContent>
                       <SelectItem value="global">Global</SelectItem>
                       {departments.map((d) => (
@@ -168,16 +186,13 @@ const CircularsPage = () => {
           >
             <div className="flex items-start justify-between gap-4">
 
-              {/* LEFT */}
               <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Megaphone className="h-4 w-4 text-primary" />
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-foreground text-sm">
-                    {c.title}
-                  </h3>
+                  <h3 className="font-medium text-sm">{c.title}</h3>
 
                   <p className="text-xs text-muted-foreground mt-1">
                     {c.description}
@@ -186,33 +201,56 @@ const CircularsPage = () => {
                   <p className="text-xs text-muted-foreground mt-2">
                     {new Date(c.date).toLocaleDateString()}
                   </p>
+
+                  {/* 🔥 FILE DISPLAY */}
+                  {c.file && (
+                    <div className="mt-3">
+
+                      {/\.(jpg|jpeg|png|gif)$/i.test(c.file) && (
+                        <img
+                          src={`http://localhost:5000/uploads/${c.file}`}
+                          className="rounded-lg max-h-72 w-full border"
+                        />
+                      )}
+
+                      {/\.pdf$/i.test(c.file) && (
+                        <iframe
+                          src={`http://localhost:5000/uploads/${c.file}`}
+                          className="w-full h-72 border rounded-lg"
+                        />
+                      )}
+
+                      {!/\.(jpg|jpeg|png|gif|pdf)$/i.test(c.file) && (
+                        <a
+                          href={`http://localhost:5000/uploads/${c.file}`}
+                          target="_blank"
+                          className="text-primary underline text-sm"
+                        >
+                          📎 View Attachment
+                        </a>
+                      )}
+
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* RIGHT */}
               <div className="flex items-center gap-2">
-
-                <Badge
-                  variant={c.department_id === "global" ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {c.department_id === "global"
-                    ? "Global"
-                    : deptShortNames[c.department_id] || c.department_id}
+                <Badge className="text-xs">
+                  {getDeptShortName(c.department_id)}
                 </Badge>
 
                 {role === "admin" && (
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7 text-destructive"
                     onClick={() => deleteCircular(c.circular_id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 )}
-
               </div>
+
             </div>
           </motion.div>
         ))}

@@ -14,7 +14,10 @@ import {
 
 const allItems = [
   { title: "Home", url: "/", icon: Home, roles: ['admin', 'faculty', 'student'] },
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'faculty', 'student'] },
+  { title: "Dashboard", url: "/AdminDashboard", icon: LayoutDashboard, roles: ['admin'] },
+  { title: "Dashboard", url: "/FacultyDashboard", icon: LayoutDashboard, roles: ['faculty'] },
+  { title: "Dashboard", url: "/StudentDashboard", icon: LayoutDashboard, roles: ['student'] },
+  //{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'faculty', 'student'] },
   { title: "Students", url: "/students", icon: Users, roles: ['admin', 'faculty'] },
   { title: "Faculty", url: "/faculty", icon: GraduationCap, roles: ['admin'] },
   { title: "Departments", url: "/departments", icon: Building2, roles: ['admin'] },
@@ -25,7 +28,7 @@ const allItems = [
   { title: "Results", url: "/results", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty'] },
   { title: "Circulars", url: "/circulars", icon: Megaphone, roles: ['admin', 'faculty', 'student'] },
-  { title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'student'] },
+  //{ title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'student'] },
   { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
 ];
 
