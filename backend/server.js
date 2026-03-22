@@ -18,6 +18,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const profileUpload = require("./routes/profileUpload");
 const deptStats = require("./routes/departmentsStats");
 const facultyDashboardRoutes = require("./routes/facultyDashboardRoutes");
+const studentDashboardRoutes = require("./routes/studentDashboardRoutes");
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/upload-profile", profileUpload);
 app.use("/api/departments-stats", deptStats);
 app.use("/api/faculty-dashboard", facultyDashboardRoutes);
+app.use("/api/student-dashboard", studentDashboardRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

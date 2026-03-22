@@ -17,7 +17,6 @@ const allItems = [
   { title: "Dashboard", url: "/AdminDashboard", icon: LayoutDashboard, roles: ['admin'] },
   { title: "Dashboard", url: "/FacultyDashboard", icon: LayoutDashboard, roles: ['faculty'] },
   { title: "Dashboard", url: "/StudentDashboard", icon: LayoutDashboard, roles: ['student'] },
-  //{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'faculty', 'student'] },
   { title: "Students", url: "/students", icon: Users, roles: ['admin', 'faculty'] },
   { title: "Faculty", url: "/faculty", icon: GraduationCap, roles: ['admin'] },
   { title: "Departments", url: "/departments", icon: Building2, roles: ['admin'] },
@@ -26,10 +25,10 @@ const allItems = [
   { title: "Exams", url: "/exams", icon: FileText, roles: ['admin'] },
   { title: "Seating Allocation", url: "/seating", icon: Grid3X3, roles: ['admin', 'student'] },
   { title: "Results", url: "/results", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty'] },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty', 'student'] },
   { title: "Circulars", url: "/circulars", icon: Megaphone, roles: ['admin', 'faculty', 'student'] },
   //{ title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'student'] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
+  //{ title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
 ];
 
 export function AppSidebar() {

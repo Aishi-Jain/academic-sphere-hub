@@ -12,7 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import FacultyDashboard from "./pages/FacultyDashboard";
-//import StudentDashboard from "./pages/StudentDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
 //import DashboardPage from "./pages/DashboardPage";
 import StudentsPage from "./pages/StudentsPage";
 import FacultyPage from "./pages/FacultyPage";
@@ -53,7 +53,7 @@ function App() {
                 <Route index element={<HomePage />} />
                 <Route path="AdminDashboard" element={<AdminDashboard />} />
                 <Route path="FacultyDashboard" element={<FacultyDashboard />} />
-                {/*<Route path="StudentDashboard" element={<StudentDashboard />} />*/}
+                <Route path="StudentDashboard" element={<StudentDashboard />} />
                 <Route path="students" element={<StudentsPage />} />
                 <Route path="faculty" element={<FacultyPage />} />
                 <Route path="departments" element={<DepartmentsPage />} />

@@ -34,6 +34,14 @@ router.post("/", upload.single("image"), async (req, res) => {
       );
     }
 
+    if (role === "student") {
+      await db.promise().query(
+        "UPDATE students SET profile_pic = ? WHERE roll_number = ?",
+        [imagePath, userId]
+      );
+    }
+
+
     // (later we can add student/admin also)
 
     res.json({ imageUrl: imagePath });
