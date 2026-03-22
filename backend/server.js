@@ -17,6 +17,7 @@ const circularRoutes = require("./routes/circularRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const profileUpload = require("./routes/profileUpload");
 const deptStats = require("./routes/departmentsStats");
+const facultyDashboardRoutes = require("./routes/facultyDashboardRoutes");
 
 const app = express();
 
@@ -37,8 +38,9 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/circulars", circularRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api", profileUpload);
+app.use("/api/upload-profile", profileUpload);
 app.use("/api/departments-stats", deptStats);
+app.use("/api/faculty-dashboard", facultyDashboardRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
@@ -72,8 +74,10 @@ app.post("/login", (req, res) => {
     const user = result[0];
 
     res.json({
+      user_id: user.id,
       role: user.role,
-      user_id: user.user_id
+      username: user.username,
+      reference_id: user.reference_id 
     });
 
   });

@@ -40,10 +40,10 @@ const LoginPage = () => {
         window.location.href = "/";
       } 
       else if(data.role === "faculty"){
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       } 
       else if(data.role === "student"){
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }
 
     } catch (err) {
