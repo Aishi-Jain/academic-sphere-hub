@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { deptShortNames, departments } from "@/lib/mock-data";
+import logo from "../assets/AS logo.png";
 
 const HomePage = () => {
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -42,7 +43,11 @@ const HomePage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <h1 className="text-5xl font-bold tracking-tight">Academic Sphere</h1>
+          <img 
+            src={logo} 
+            alt="Academic Sphere Logo" 
+            className="mx-auto mb-6 w-72 md:w-96 drop-shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+          />
           <p className="text-muted-foreground">
             Logged in as {role}
           </p>

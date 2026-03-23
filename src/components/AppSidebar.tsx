@@ -1,16 +1,15 @@
 import {
   Home, LayoutDashboard, Users, GraduationCap, Building2, BookOpen,
   DoorOpen, FileText, Grid3X3, ClipboardList, BarChart3, Megaphone,
-  Bell, Settings,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { useRole } from "@/lib/role-context";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
+import logo from "../assets/AS logo.png"; // ✅ IMPORT LOGO
 
 const allItems = [
   { title: "Home", url: "/", icon: Home, roles: ['admin', 'faculty', 'student'] },
@@ -29,8 +28,6 @@ const allItems = [
   { title: "Results", url: "/results", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty', 'student'] },
   { title: "Circulars", url: "/circulars", icon: Megaphone, roles: ['admin', 'faculty', 'student'] },
-  //{ title: "Notifications", url: "/notifications", icon: Bell, roles: ['admin', 'student'] },
-  //{ title: "Settings", url: "/settings", icon: Settings, roles: ['admin'] },
 ];
 
 export function AppSidebar() {
@@ -45,28 +42,29 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarContent>
-        <div className={`px-4 py-5 ${collapsed ? 'px-2' : ''}`}>
-          {!collapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <GraduationCap className="h-4.5 w-4.5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold text-foreground tracking-tight">Academic Sphere</h1>
-                <p className="text-[10px] text-muted-foreground">Enterprise ERP</p>
-              </div>
-            </div>
-          ) : (
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-              <GraduationCap className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-          )}
+
+        {/* 🔥 LOGO SECTION */}
+        <div className="px-4 py-5 flex items-center">
+          <img
+            src={logo}
+            alt="Academic Sphere Logo"
+            className={`
+              object-contain transition-all duration-300
+              ${collapsed 
+                ? "w-10 h-10 mx-auto"   // keep centered ONLY when collapsed
+                : "w-full max-w-[160px] h-auto"  // left aligned when expanded
+              }
+              drop-shadow-[0_0_12px_rgba(139,92,246,0.5)]
+            `}
+          />
         </div>
 
+        {/* 🔥 NAVIGATION */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground/70 px-4">
             {!collapsed && "Navigation"}
           </SidebarGroupLabel>
+
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -87,6 +85,7 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
       </SidebarContent>
     </Sidebar>
   );
