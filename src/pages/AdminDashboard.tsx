@@ -1,5 +1,8 @@
 import { StatCard } from "@/components/StatCard";
-import { Users, GraduationCap, Building2, DoorOpen, FileText, TrendingUp, CheckCircle, Camera } from "lucide-react";
+import {
+  Users, GraduationCap, Building2, DoorOpen,
+  FileText, TrendingUp, CheckCircle, Camera
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Bar, Line } from "react-chartjs-2";
 import {
@@ -7,7 +10,10 @@ import {
   Title, Tooltip, Legend, PointElement, LineElement, Filler,
 } from "chart.js";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement, Filler);
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement,
+  Title, Tooltip, Legend, PointElement, LineElement, Filler
+);
 
 import { useEffect, useState } from "react";
 import { deptShortNames } from "@/lib/mock-data";
@@ -24,16 +30,52 @@ const chartColors = [
 const AdminDashboard = () => {
 
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [profilePic, setProfilePic] = useState<string | null>(
-    localStorage.getItem("profilePic")
-  );
+  const [profilePic, setProfilePic] = useState<string | null>(null);
 
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  // 🔥 LOAD DASHBOARD + PROFILE PIC
   useEffect(() => {
+
     fetch("http://localhost:5000/api/dashboard")
       .then(res => res.json())
       .then(data => setDashboardData(data))
       .catch(err => console.error(err));
-  }, []);
+
+    // 🔥 LOAD PROFILE PIC (user-specific)
+    if (user?.id) {
+      const savedPic = localStorage.getItem(`admin_profile_${user.id}`);
+      if (savedPic) {
+        setProfilePic(savedPic);
+      }
+    }
+
+  }, [user]);
+
+  // 📷 UPLOAD
+  const handleImageUpload = async (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("http://localhost:5000/api/upload-profile", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.imageUrl) {
+      const fullUrl = `http://localhost:5000${data.imageUrl}`;
+
+      // 🔥 SAVE PER USER
+      localStorage.setItem(`admin_profile_${user.id}`, fullUrl);
+
+      setProfilePic(fullUrl);
+    }
+  };
 
   // 📊 Bar Chart
   const deptBarData = {
@@ -75,22 +117,6 @@ const AdminDashboard = () => {
     },
   };
 
-  // 📷 Upload
-  const handleImageUpload = async (e: any) => {
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const res = await fetch("http://localhost:5000/api/upload-profile", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    localStorage.setItem("profilePic", data.imageUrl);
-    setProfilePic(data.imageUrl);
-  };
-
   if (!dashboardData) {
     return <div className="p-6">Loading dashboard...</div>;
   }
@@ -98,16 +124,15 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-10">
 
-      {/* 🔹 Header */}
+      {/* HEADER */}
       <div>
         <h1 className="page-header">Admin Dashboard</h1>
         <p className="page-description">Overview of academic operations</p>
       </div>
 
-      {/* 👤 PROFILE CARD CENTERED */}
+      {/* PROFILE */}
       <div className="flex justify-center relative">
 
-        {/* Upload Button (Top Right Floating) */}
         <label className="absolute right-4 top-4 bg-purple-600 p-2 rounded-full cursor-pointer hover:scale-105 transition">
           <Camera size={16} />
           <input type="file" className="hidden" onChange={handleImageUpload} />
@@ -121,7 +146,7 @@ const AdminDashboard = () => {
           />
 
           <div>
-            <h3 className="text-lg font-semibold">Admin Name</h3>
+            <h3 className="text-lg font-semibold">Admin</h3>
             <p className="text-sm text-muted-foreground">Role: Admin</p>
             <p className="text-sm text-muted-foreground">Malla Reddy College of Engineering</p>
             <p className="text-xs text-green-500 mt-1">Active</p>
@@ -130,9 +155,8 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* 📊 STAT CARDS */}
+      {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
         <StatCard title="Total Students" value={dashboardData.totalStudents} icon={Users} />
         <StatCard title="Total Faculty" value={dashboardData.totalFaculty} icon={GraduationCap} />
         <StatCard title="Departments" value={dashboardData.departments} icon={Building2} />
@@ -140,10 +164,9 @@ const AdminDashboard = () => {
         <StatCard title="Upcoming Exams" value={dashboardData.upcomingExams} icon={FileText} />
         <StatCard title="Average SGPA" value={dashboardData.averageCGPA} icon={TrendingUp} />
         <StatCard title="Pass %" value={`${dashboardData.passPercentage}%`} icon={CheckCircle} />
-
       </div>
 
-      {/* 📊 BAR CHART */}
+      {/* BAR */}
       <motion.div className="stat-card">
         <h3 className="text-sm font-medium mb-4">Students by Department</h3>
         <div className="h-64">
@@ -151,7 +174,7 @@ const AdminDashboard = () => {
         </div>
       </motion.div>
 
-      {/* 📈 LINE CHART */}
+      {/* LINE */}
       <motion.div className="stat-card">
         <h3 className="text-sm font-medium mb-4">Semester Performance Trend</h3>
         <div className="h-64">
