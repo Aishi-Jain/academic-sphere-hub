@@ -7,6 +7,8 @@ const ResultsPage = () => {
   const [loading, setLoading] = useState(false);
 
   const fetchResults = async () => {
+    if (!roll) return alert("Please enter roll number");
+
     setLoading(true);
     try {
       const res = await axios.get(`http://localhost:5000/api/results/${roll}`);
@@ -21,18 +23,18 @@ const ResultsPage = () => {
     if (!data) return 0;
 
     const hasFail = data.semesters.some(
-        (sem: any) => parseFloat(sem.sgpa) === 0
+      (sem: any) => parseFloat(sem.sgpa) === 0
     );
 
     if (hasFail) return "Fail";
 
     const total = data.semesters.reduce(
-        (sum: number, sem: any) => sum + parseFloat(sem.sgpa),
-        0
+      (sum: number, sem: any) => sum + parseFloat(sem.sgpa),
+      0
     );
 
     return (total / data.semesters.length).toFixed(2);
- };
+  };
 
   const getBacklogs = () => {
     if (!data) return [];
@@ -73,32 +75,63 @@ const ResultsPage = () => {
   };
 
   return (
-    <div className="p-8 bg-black text-white min-h-screen">
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-start pt-24 px-4">
 
-      {/* 🔍 SEARCH */}
-      <div className="flex gap-4 mb-8">
-        <input
-          value={roll}
-          onChange={(e) => setRoll(e.target.value)}
-          placeholder="Enter Roll Number"
-          className="p-3 rounded-lg bg-gray-900 border border-gray-700 w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          onClick={fetchResults}
-          className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg"
-        >
-          {loading ? "Loading..." : "Get Results"}
-        </button>
-      </div>
+      {/* 🌟 HERO SECTION (only when no data) */}
+      {!data && (
+        <div className="text-center max-w-2xl w-full">
 
+          {/* Title */}
+          <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-blue-400 to-cyan-300 text-blue-400">
+            RESULTS
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-gray-400 mb-10 text-lg">
+            Discover your academic performance across semesters 📊  
+            Enter your roll number to view detailed results, SGPA, CGPA, and backlogs.
+          </p>
+
+          {/* 🔥 Glass Card */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+
+            <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+
+              <input
+                value={roll}
+                onChange={(e) => setRoll(e.target.value)}
+                placeholder="Enter Roll Number (e.g., 22Q91A6665)"
+                className="w-full md:w-96 px-4 py-3 rounded-xl bg-gray-900 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+
+              <button
+                onClick={fetchResults}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:scale-105 transition transform shadow-lg"
+              >
+                {loading ? "Fetching..." : "Get Results"}
+              </button>
+
+            </div>
+
+            <p className="text-gray-500 text-sm mt-4">
+              ⚡ Fast • Real-time • Accurate results powered by Academic Sphere
+            </p>
+
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 RESULTS SECTION */}
       {data && (
-        <>
-          {/* 🔥 HEADER */}
+        <div className="w-full max-w-6xl mt-10">
+
+          {/* HEADER */}
           <div className="bg-gradient-to-r from-blue-900/40 to-blue-700/20 p-6 rounded-xl mb-8 border border-blue-500/20 shadow-lg">
 
             <h1 className="text-3xl font-bold text-blue-400 mb-2">
               ACADEMIC RESULTS
             </h1>
+
             <p className="text-gray-400 mb-4">
               Semester-wise performance overview
             </p>
@@ -108,33 +141,34 @@ const ResultsPage = () => {
                 <p className="text-gray-400 text-sm">Student Name</p>
                 <p className="font-semibold">{data.student.name}</p>
               </div>
+
               <div>
                 <p className="text-gray-400 text-sm">Roll Number</p>
                 <p className="font-semibold">{roll}</p>
               </div>
+
               <div>
                 <p className="text-gray-400 text-sm">Branch</p>
                 <p className="font-semibold">{data.student.branch}</p>
               </div>
+
               <div>
                 <p className="text-gray-400 text-sm">College</p>
-                <p>
-                    {data.student["College Name"] || "Malla Reddy College of Engineering"}
-                </p>
+                <p>Malla Reddy College of Engineering</p>
               </div>
             </div>
           </div>
 
-          {/* 🔥 SUMMARY CARDS */}
+          {/* SUMMARY */}
           <div className="grid md:grid-cols-3 gap-6 mb-10">
 
             <div className="bg-blue-900/30 p-6 rounded-xl border border-blue-500/20 shadow-lg">
               <p className="text-gray-400">CGPA</p>
               <h2 className="text-3xl font-bold text-blue-400">
                 {calculateCGPA() === "Fail" ? (
-                    <span className="text-red-400">Fail</span>
+                  <span className="text-red-400">Fail</span>
                 ) : (
-                    calculateCGPA()
+                  calculateCGPA()
                 )}
               </h2>
             </div>
@@ -155,7 +189,7 @@ const ResultsPage = () => {
 
           </div>
 
-          {/* 🔥 SEMESTERS */}
+          {/* SEMESTERS */}
           {data.semesters.map((sem: any, i: number) => (
             <div
               key={i}
@@ -165,12 +199,13 @@ const ResultsPage = () => {
                 <h3 className="text-xl font-semibold text-blue-400">
                   Semester {sem.semester}
                 </h3>
+
                 <span className="text-gray-300">
-                    SGPA: {parseFloat(sem.sgpa) === 0 ? (
-                        <span className="text-red-400 font-semibold">Fail</span>
-                    ) : (
-                        sem.sgpa
-                    )}
+                  SGPA: {parseFloat(sem.sgpa) === 0 ? (
+                    <span className="text-red-400 font-semibold">Fail</span>
+                  ) : (
+                    sem.sgpa
+                  )}
                 </span>
               </div>
 
@@ -202,7 +237,7 @@ const ResultsPage = () => {
                       </td>
                       <td className="text-center">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold shadow-md ${gradeColor(
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${gradeColor(
                             sub.grade
                           )}`}
                         >
@@ -217,20 +252,7 @@ const ResultsPage = () => {
             </div>
           ))}
 
-          {/* 🔥 BACKLOG LIST */}
-          {getBacklogs().length > 0 && (
-            <div className="bg-red-900/30 p-6 rounded-xl border border-red-500/20">
-              <h2 className="text-xl font-bold text-red-400 mb-2">
-                Backlogs
-              </h2>
-              {getBacklogs().map((b: any, i: number) => (
-                <p key={i}>
-                  {b.semester} - {b.subject}
-                </p>
-              ))}
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   );

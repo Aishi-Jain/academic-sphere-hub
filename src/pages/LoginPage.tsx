@@ -67,14 +67,14 @@ const LoginPage = () => {
           seating allocation, results, and institutional workflows.
         </p>
 
-        <div style={styles.hintBox}>
+        {/*<div style={styles.hintBox}>
           <p style={styles.hintTitle}>Login Roles</p>
           <ul style={styles.hintList}>
             <li><b>Admin</b> → Full system control</li>
             <li><b>Faculty</b> → Manage students & exams</li>
             <li><b>Student</b> → View results & details</li>
           </ul>
-        </div>
+        </div>*/}
       </motion.div>
 
       {/* RIGHT SIDE */}
