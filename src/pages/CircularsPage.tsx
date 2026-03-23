@@ -29,6 +29,9 @@ import {
 const CircularsPage = () => {
   const { role } = useRole();
 
+  // ✅ cleaner flag
+  const canManageCirculars = role === "admin" || role === "faculty";
+
   const [circulars, setCirculars] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -108,7 +111,8 @@ const CircularsPage = () => {
           <p className="page-description">Announcements and notices</p>
         </div>
 
-        {role === "admin" && (
+        {/* ✅ FIXED CONDITION */}
+        {canManageCirculars && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5 text-xs">
@@ -202,7 +206,6 @@ const CircularsPage = () => {
                     {new Date(c.date).toLocaleDateString()}
                   </p>
 
-                  {/* 🔥 FILE DISPLAY */}
                   {c.file && (
                     <div className="mt-3">
 
@@ -240,7 +243,7 @@ const CircularsPage = () => {
                   {getDeptShortName(c.department_id)}
                 </Badge>
 
-                {role === "admin" && (
+                {canManageCirculars && (
                   <Button
                     size="icon"
                     variant="ghost"
