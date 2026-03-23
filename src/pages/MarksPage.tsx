@@ -45,16 +45,17 @@ const MarksPage = () => {
 
     const res = await axios.get("http://localhost:5000/api/marks/students", {
       params: {
+        subject_id: subjectId,
         department_id: departmentId,
         section
-      },
+      }
     });
 
     setStudents(res.data);
 
     const initialMarks: any = {};
     res.data.forEach((s: any) => {
-      initialMarks[s.student_id] = "";
+      initialMarks[s.student_id] = s.marks || "";
     });
 
     setMarks(initialMarks);
@@ -159,17 +160,26 @@ const MarksPage = () => {
                 <tr key={s.student_id} className="border-b border-gray-700">
                   <td className="p-3">{s.roll_no}</td>
                   <td className="p-3">{s.name}</td>
+
                   <td className="p-3">
                     <input
                       type="number"
                       min="0"
                       max="100"
-                      className="bg-gray-800 p-2 rounded w-24"
+                      className={`p-2 rounded w-24 ${
+                        s.marks ? "bg-green-900" : "bg-gray-800"
+                      }`}
                       value={marks[s.student_id] || ""}
                       onChange={(e) =>
                         handleChange(s.student_id, e.target.value)
                       }
                     />
+
+                    {s.marks !== null && s.marks !== undefined && (
+                      <p className="text-green-400 text-xs mt-1">
+                        ✔ Already entered
+                      </p>
+                    )}
                   </td>
                 </tr>
               ))}

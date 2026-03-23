@@ -2,13 +2,20 @@ const db = require("../config/db");
 
 // ✅ Get students
 exports.getStudentsByFilter = (req, res) => {
-  const { department_id, section } = req.query;
+  const { department_id, section, subject_id } = req.query;
 
   db.query(
-    `SELECT student_id, roll_number AS roll_no, name 
-     FROM students 
-     WHERE department_id = ? AND section = ?`,
-    [department_id, section],
+    `SELECT 
+        s.student_id,
+        s.roll_number AS roll_no,
+        s.name,
+        m.marks
+     FROM students s
+     LEFT JOIN marks m 
+       ON s.student_id = m.student_id 
+       AND m.subject_id = ?
+     WHERE s.department_id = ? AND s.section = ?`,
+    [subject_id, department_id, section],
     (err, rows) => {
       if (err) {
         console.error(err);
