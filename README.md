@@ -1,73 +1,183 @@
-# Welcome to your Lovable project
+# 🎓 Academic Sphere ERP  
+### A Smart Academic Management System with Automated Exam Seating Optimization
 
-## Project info
+Academic Sphere is a full-stack, web-based Academic ERP system designed to digitize and centralize the core administrative and academic workflows of a higher education institution.  
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+It replaces fragmented manual processes with a unified, scalable, and role-aware platform for administrators, faculty, and students.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Features
 
-**Use Lovable**
+### 🔐 Role-Based Access Control (RBAC)
+- Secure authentication system for **Admin, Faculty, and Students**
+- Strict permission enforcement at both frontend and backend
+- Role-specific dashboards and UI rendering
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 👨‍🎓 Student & Faculty Management
+- Full CRUD operations
+- Bulk CSV upload (1000+ records at once)
+- Automatic account creation for uploaded users
+- Real-time search and filtering
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🪑 Automated Seating Allocation
+- Greedy algorithm with **progressive departmental fallback**
+- Ensures **no two students from the same department share a bench**
+- Supports multiple classrooms and large datasets
+- Generates:
+  - Visual seating grid
+  - Bench-wise allocation
+  - Exportable PDF reports
 
-**Use your preferred IDE**
+### 📊 Results Management
+- Real-time result fetching via **web scraping (JNTUH portal)**
+- Automatic calculation of:
+  - SGPA
+  - CGPA
+- Multi-semester result aggregation
+- Backlog detection
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📈 Analytics Dashboard
+- Institution-level, department-level, and student-level insights
+- Performance tracking and trend analysis
+- Leaderboards and pass percentage metrics
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 📢 Circulars Module
+- Centralized communication system
+- Admin & Faculty can post circulars
+- Students can view updates in real-time
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🏗️ System Architecture
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+The system follows a clean **3-tier architecture**:
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Frontend:** React (TypeScript)
+- **Backend:** Node.js + Express.js
+- **Database:** MySQL
+- Communication via REST APIs
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🛠️ Technologies Used
+
+### Frontend
+- React (TypeScript)
+- Vite
+- Tailwind CSS
+
+### Backend
+- Node.js
+- Express.js
+
+### Database
+- MySQL
+
+### Other Tools & Libraries
+- Axios (API requests)
+- Cheerio (Web scraping)
+- CSV parsing utilities
+
+---
+
+## ⚙️ Installation
+
+### Prerequisites
+- Node.js (v18 or higher)
+- MySQL
+
+---
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/your-username/academic-sphere.git
+cd academic-sphere
+```
+
+---
+
+### 2️⃣ Install Dependencies
+
+#### Frontend
+```bash
+cd frontend
+npm install
+```
+
+#### Backend
+```bash
+cd backend
+npm install
+```
+
+---
+
+### 3️⃣ Setup Environment Variables
+
+Create a `.env` file in the backend folder:
+
+```env
+PORT=5000
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=academic_sphere
+```
+
+---
+
+### 4️⃣ Run the Project
+
+#### Start Backend
+```bash
+cd backend
+npm start
+```
+
+#### Start Frontend
+```bash
+cd frontend
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🌐 Usage
 
-**Use GitHub Codespaces**
+- Open: `http://localhost:5173`
+- Login using role-based credentials:
+  - Admin
+  - Faculty
+  - Student
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 📦 Modules Overview
 
-This project is built with:
+1. Authentication & RBAC  
+2. Student Management  
+3. Faculty Management  
+4. Seating Allocation System  
+5. Results Module  
+6. Analytics Dashboard  
+7. Circulars System  
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 💡 Key Highlights
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+- Eliminates **manual seating arrangement errors**
+- Reduces administrative workload from **days to seconds**
+- Provides **real-time academic insights**
+- Centralizes all institutional workflows into one system
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 🔮 Future Enhancements
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- JWT-based authentication & session management
+- Password encryption (bcrypt)
+- Multi-university support
+- Mobile app integration
+- AI-based academic predictions
