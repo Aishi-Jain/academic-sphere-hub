@@ -9,26 +9,30 @@ import { DoorOpen, Building2 } from "lucide-react";
 
 interface BenchAllocation {
   bench: number;
-  student1: { name: string; roll: string; dept: string };
-  student2: { name: string; roll: string; dept: string };
+  student1: { roll: string };
+  student2: { roll: string };
 }
 
 const SeatingPage = () => {
 
+  // 🔥 ROLE DETECTION
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const role = user?.role; // admin | faculty | student
+
   const [rooms, setRooms] = useState<any[]>([]);
   const [exams, setExams] = useState<any[]>([]);
   const [selectedExam, setSelectedExam] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState("all");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [openRooms, setOpenRooms] = useState(false);
 
   const [generated, setGenerated] = useState(false);
   const [allocations, setAllocations] = useState<{ room: string; benches: BenchAllocation[] }[]>([]);
+  const [searchRoll, setSearchRoll] = useState("");
+  const [filteredAllocations, setFilteredAllocations] = useState<any[]>([]);
 
   // 🔥 FETCH ROOMS + EXAMS
   useEffect(() => {
-
     fetch("http://localhost:5000/api/classrooms")
       .then(res => res.json())
       .then(data => {
@@ -48,9 +52,16 @@ const SeatingPage = () => {
         }));
         setExams(formatted);
       });
-
   }, []);
 
+  // 🔥 AUTO SELECT EXAM FOR STUDENTS/FACULTY
+  useEffect(() => {
+    if (role !== "admin" && exams.length > 0) {
+      setSelectedExam(String(exams[0].id));
+    }
+  }, [exams, role]);
+
+  // 🔥 FETCH SEATING
   useEffect(() => {
     if (!selectedExam) return;
 
@@ -94,18 +105,10 @@ const SeatingPage = () => {
     fetchSeating();
   }, [selectedExam]);
 
-  useEffect(() => {
-    const savedExam = localStorage.getItem("selectedExam");
-    if (savedExam) {
-      setSelectedExam(savedExam);
-    }
-  }, []);
-
+  // 🔥 DROPDOWN CLOSE
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-
-      // ONLY close if clicking outside dropdown
       if (!target.closest("#rooms-dropdown")) {
         setOpenRooms(false);
       }
@@ -126,7 +129,7 @@ const SeatingPage = () => {
     }
   };
 
-  // 🔥 CSV UPLOAD
+  // 🔥 CSV UPLOAD (ADMIN ONLY)
   const uploadCSV = async () => {
     if (!csvFile) {
       alert("Select CSV");
@@ -144,9 +147,25 @@ const SeatingPage = () => {
     alert("Students CSV uploaded");
   };
 
-  //  GENERATE 
-  const generateSeating = async () => {
+  const handleSearch = () => {
+    if (!searchRoll.trim()) {
+      setFilteredAllocations([]);
+      return;
+    }
 
+    const result = allocations.filter((room) =>
+      room.benches.some(
+        (b: any) =>
+          b.student1.roll === searchRoll ||
+          b.student2.roll === searchRoll
+      )
+    );
+
+    setFilteredAllocations(result);
+  };
+
+  // 🔥 GENERATE (ADMIN ONLY)
+  const generateSeating = async () => {
     if (!selectedExam) {
       alert("Select exam");
       return;
@@ -158,8 +177,6 @@ const SeatingPage = () => {
     };
 
     try {
-
-      // 🔥 STEP 1: GENERATE
       const res = await fetch("http://localhost:5000/api/seating/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,41 +190,6 @@ const SeatingPage = () => {
         return;
       }
 
-      // 🔥 STEP 2: FETCH GENERATED DATA
-      const fetchRes = await fetch(`http://localhost:5000/api/seating/${selectedExam}`);
-      const seatingData = await fetchRes.json();
-
-      console.log("SEATING DATA:", seatingData);
-
-      // 🔥 STEP 3: FORMAT DATA
-      const grouped: any = {};
-
-      seatingData.forEach((row: any) => {
-
-        if (!grouped[row.room_number]) {
-          grouped[row.room_number] = [];
-        }
-
-        grouped[row.room_number].push({
-          bench: row.bench_number,
-          student1: {
-            roll: row.student1_id,
-          },
-          student2: {
-            roll: row.student2_id,
-          }
-        });
-
-      });
-
-      const formatted = Object.keys(grouped).map(room => ({
-        room,
-        benches: grouped[room]
-      }));
-
-      setAllocations(formatted);
-      setGenerated(true);
-
       alert("Seating generated successfully!");
 
     } catch (err) {
@@ -215,238 +197,183 @@ const SeatingPage = () => {
       alert("Server error");
     }
   };
+
   return (
     <div className="space-y-6">
 
       {/* HEADER */}
       <div>
-        <h1 className="page-header">Seating Allocation Engine</h1>
+        <h1 className="page-header">
+          {role === "admin" ? "Seating Allocation Engine" : "Seating Arrangement"}
+        </h1>
+
         <p className="page-description">
-          Generate exam seating with department-pair rules
+          {role === "admin"
+            ? "Generate exam seating with department-pair rules"
+            : "View your exam seating arrangement"}
         </p>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Available Rooms" value={rooms.length} icon={DoorOpen} />
-        <StatCard title="Departments" value={6} icon={Building2} />
-      </div>
+      {/* STATS (ADMIN ONLY) */}
+      {role === "admin" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Available Rooms" value={rooms.length} icon={DoorOpen} />
+          <StatCard title="Departments" value={6} icon={Building2} />
+        </div>
+      )}
 
-      {/* CONFIG */}
-      <div className="stat-card space-y-4 overflow-visible">
+      {/* CONFIG (ADMIN ONLY) */}
+      {role === "admin" && (
+        <div className="stat-card space-y-4 overflow-visible">
 
-        <h3 className="text-sm font-medium text-foreground">Configuration</h3>
+          <h3 className="text-sm font-medium text-foreground">Configuration</h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-          {/* EXAM */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Exam</label>
-            <Select
-              value={selectedExam}
-              onValueChange={(value) => {
-                setSelectedExam(value);
-                localStorage.setItem("selectedExam", value);
-              }}
-            >
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Select Exam" />
-              </SelectTrigger>
+            {/* EXAM */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Exam</label>
+              <Select
+                value={selectedExam}
+                onValueChange={(value) => {
+                  setSelectedExam(value);
+                  localStorage.setItem("selectedExam", value);
+                }}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select Exam" />
+                </SelectTrigger>
 
-              <SelectContent className="max-h-60 overflow-y-auto z-50">
-                {exams.map((e: any) => (
-                  <SelectItem key={e.id} value={String(e.id)}>
-                    {e.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* ROOMS */}
-          <div id="rooms-dropdown" className="relative">
-            <label className="text-xs text-muted-foreground mb-1 block">Rooms</label>
-
-            {/* Trigger */}
-            <div
-              onClick={() => setOpenRooms(!openRooms)}
-              className="h-9 flex items-center justify-between px-3 border border-border rounded-md text-sm cursor-pointer bg-background"
-            >
-              <span>
-                {selectedRooms.length === 0
-                  ? "All Rooms"
-                  : `${selectedRooms.length} room(s) selected`}
-              </span>
-              <span>▼</span>
+                <SelectContent>
+                  {exams.map((e: any) => (
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Dropdown */}
-            {openRooms && (
+            {/* ROOMS */}
+            <div id="rooms-dropdown">
+              <label className="text-xs text-muted-foreground mb-1 block">Rooms</label>
+
               <div
-                onClick={(e) => e.stopPropagation()}
-                className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto border border-border rounded-md bg-background shadow-lg p-2"
+                onClick={() => setOpenRooms(!openRooms)}
+                className="h-9 flex items-center justify-between px-3 border rounded-md text-sm cursor-pointer"
               >
-
-                {/* ALL ROOMS */}
-                <div className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedRooms.length === 0}
-                    onChange={() => setSelectedRooms([])}
-                  />
-                  <span className="text-sm">All Rooms</span>
-                </div>
-
-                {/* ROOMS LIST */}
-                {rooms.map((r: any) => (
-                  <div key={r.id} className="flex items-center gap-2 mb-1">
-                    <input
-                      type="checkbox"
-                      checked={selectedRooms.includes(String(r.id))}
-                      onChange={() => toggleRoom(String(r.id))}
-                    />
-                    <span className="text-sm">{r.roomNumber}</span>
-                  </div>
-                ))}
-
+                {selectedRooms.length === 0 ? "All Rooms" : `${selectedRooms.length} selected`}
               </div>
-            )}
+
+              {openRooms && (
+                <div className="absolute bg-background p-2 border rounded mt-1">
+                  {rooms.map((r: any) => (
+                    <div key={r.id}>
+                      <input
+                        type="checkbox"
+                        checked={selectedRooms.includes(String(r.id))}
+                        onChange={() => toggleRoom(String(r.id))}
+                      />
+                      {r.roomNumber}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ACTIONS */}
+            <div className="flex gap-2 items-end">
+              <input type="file" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+
+              <Button onClick={uploadCSV}>
+                <Upload /> Upload CSV
+              </Button>
+
+              <Button onClick={generateSeating}>
+                <Grid3X3 /> Generate Seating
+              </Button>
+            </div>
+
           </div>
-
-          {/* ACTIONS */}
-          <div className="flex flex-wrap items-end gap-2">
-
-            <input
-              type="file"
-              accept=".csv"
-              className="text-xs max-w-[140px]"
-              onChange={(e) => {
-                if (e.target.files) {
-                  setCsvFile(e.target.files[0]);
-                }
-              }}
-            />
-
-            <Button variant="outline" size="sm" onClick={uploadCSV}>
-              <Upload className="h-3.5 w-3.5" /> Upload CSV
-            </Button>
-
-            <Button size="sm" onClick={generateSeating}>
-              <Grid3X3 className="h-3.5 w-3.5" /> Generate Seating
-            </Button>
-
-          </div>
-
         </div>
+      )}
 
-        {/* RULE */}
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-xs text-muted-foreground">
-            <strong>Rule:</strong> Each bench has 2 students from different departments.
-            Pairs: CSE↔CSM, CSD↔ECE, IT↔AIDS
-          </p>
-        </div>
+      <div className="flex gap-3 items-center mb-4">
+        <input
+          type="text"
+          placeholder="Enter Roll Number"
+          value={searchRoll}
+          onChange={(e) => setSearchRoll(e.target.value)}
+          className="px-3 py-2 rounded-md bg-gray-800 border border-gray-600 text-sm"
+        />
 
+        <Button size="sm" onClick={handleSearch}>
+          Search
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSearchRoll("");
+            setFilteredAllocations([]);
+          }}
+        >
+          Reset
+        </Button>
       </div>
 
-      {/* OUTPUT */}
+      {/* OUTPUT (ALL USERS) */}
       {generated && (
         <div className="space-y-6">
 
-          {/* HEADER */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">
-              Seating Report
-            </h3>
+          <div className="flex justify-between">
+            <h3>Seating Report</h3>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.print()}
-            >
-              <Download className="h-3.5 w-3.5" /> Export PDF
+            <Button onClick={() => window.print()}>
+              <Download /> Export PDF
             </Button>
           </div>
 
-          {allocations.map((alloc, ri) => (
-            <motion.div
-              key={alloc.room}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: ri * 0.1 }}
-              className="stat-card space-y-4"
-            >
+          {(filteredAllocations.length > 0 ? filteredAllocations : allocations)
+            .map((alloc, i) => (
+            <motion.div key={alloc.room} className="stat-card space-y-4">
 
-              {/* ROOM HEADER */}
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-foreground">
-                  Room {alloc.room}
-                </h4>
-
-                <Badge variant="secondary">
-                  {alloc.benches.length * 2} Students
-                </Badge>
+              <div className="flex justify-between">
+                <h4>Room {alloc.room}</h4>
+                <Badge>{alloc.benches.length * 2} Students</Badge>
               </div>
 
-              {/* 🔥 VISUAL GRID */}
-              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-3">
                 {alloc.benches.map((b) => (
-                  <div key={b.bench} className="text-[10px] text-center space-y-1">
-
-                    <div className="text-muted-foreground">
+                  <div
+                    key={b.bench}
+                    className="text-[10px] text-center space-y-1"
+                  >
+                    {/* Bench label */}
+                    <div className="text-muted-foreground font-medium">
                       B{b.bench}
                     </div>
 
-                    <div className="bg-primary/20 rounded p-1 font-mono text-primary">
+                    {/* Student 1 */}
+                    <div className={`rounded-md px-2 py-1 font-mono transition-all duration-200
+                      ${b.student1.roll === searchRoll
+                        ? "bg-yellow-400 text-black font-bold scale-110 shadow-lg"
+                        : "bg-primary/20 text-primary hover:scale-105 hover:shadow-lg"}
+                    `}>
                       {b.student1.roll}
                     </div>
 
-                    <div className="bg-info/20 rounded p-1 font-mono text-info">
+                    {/* Student 2 */}
+                    <div className={`rounded-md px-2 py-1 font-mono transition-all duration-200
+                      ${b.student2.roll === searchRoll
+                        ? "bg-yellow-400 text-black font-bold scale-110 shadow-lg"
+                        : "bg-blue-500/20 text-blue-400 hover:scale-105 hover:shadow-lg"}
+                    `}>
                       {b.student2.roll}
                     </div>
-
                   </div>
                 ))}
-              </div>
-
-              {/* 🔥 TABLE VIEW (CLEAN LIKE YOUR DESIGN) */}
-              <div className="overflow-x-auto border border-border rounded-lg">
-
-                <table className="w-full text-xs">
-
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-3 py-2 text-left">Bench</th>
-                      <th className="px-3 py-2 text-left">Student 1</th>
-                      <th className="px-3 py-2 text-left">Student 2</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {alloc.benches.map((b) => (
-                      <tr
-                        key={b.bench}
-                        className="border-b border-border last:border-0"
-                      >
-
-                        <td className="px-3 py-2 font-medium">
-                          B{b.bench}
-                        </td>
-
-                        <td className="px-3 py-2 font-mono">
-                          {b.student1.roll}
-                        </td>
-
-                        <td className="px-3 py-2 font-mono">
-                          {b.student2.roll}
-                        </td>
-
-                      </tr>
-                    ))}
-                  </tbody>
-
-                </table>
-
               </div>
 
             </motion.div>

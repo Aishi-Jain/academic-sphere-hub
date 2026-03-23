@@ -20,6 +20,7 @@ const deptStats = require("./routes/departmentsStats");
 const facultyDashboardRoutes = require("./routes/facultyDashboardRoutes");
 const studentDashboardRoutes = require("./routes/studentDashboardRoutes");
 const marksRoutes = require("./routes/marksRoutes");
+const studentMarksRoutes = require("./routes/studentMarksRoutes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/departments-stats", deptStats);
 app.use("/api/faculty-dashboard", facultyDashboardRoutes);
 app.use("/api/student-dashboard", studentDashboardRoutes);
 app.use("/api/marks", marksRoutes);
+app.use("/api/student/marks", studentMarksRoutes);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");
