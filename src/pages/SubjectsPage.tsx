@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/components/DataTable";
 import { departments, deptShortNames } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
@@ -14,20 +14,52 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const yearLabelMap: Record<string, string> = {
+  "1": "I",
+  "2": "II",
+  "3": "III",
+  "4": "IV",
+};
+
+const regulationOptions = ["R22", "R25"];
+const semesterOptions = ["1", "2"];
+const yearOptions = ["1", "2", "3", "4"];
+
+type SubjectRow = {
+  id: number;
+  code: string;
+  name: string;
+  department: string;
+  semester: string;
+  year: string;
+  regulation: string;
+};
+
+const defaultForm = {
+  code: "",
+  name: "",
+  department: "",
+  semester: "1",
+  year: "1",
+  regulation: "R22",
+};
+
 const SubjectsPage = () => {
-  const [subjects, setSubjects] = useState([]);
+  const [subjects, setSubjects] = useState<SubjectRow[]>([]);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [department, setDepartment] = useState("");
-  const [semester, setSemester] = useState("");
-
+  const [form, setForm] = useState(defaultForm);
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
-  // 🔥 FETCH SUBJECTS
-  useEffect(() => {
+  const departmentMap: Record<string, string> = useMemo(() => {
+    const map: Record<string, string> = {};
+    departments.forEach((d) => {
+      map[d.id] = deptShortNames[d.name] || d.name;
+    });
+    return map;
+  }, []);
+
+  const fetchSubjects = () => {
     fetch("http://localhost:5000/api/subjects")
       .then((res) => res.json())
       .then((data) => {
@@ -36,63 +68,66 @@ const SubjectsPage = () => {
           code: s.subject_code,
           name: s.subject_name,
           department: String(s.department_id),
-          semester: s.semester,
+          semester: String(s.semester),
+          year: String(s.year),
+          regulation: s.regulation,
         }));
 
         setSubjects(formatted);
       })
       .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchSubjects();
   }, []);
 
-  // 🔥 ADD
-  const addSubject = async () => {
-    await fetch("http://localhost:5000/api/subjects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subject_code: code,
-        subject_name: name,
-        department_id: department,
-        semester,
-      }),
-    });
-
-    setOpen(false);
-    window.location.reload();
-  };
-
-  // 🔥 UPDATE
-  const updateSubject = async (id: number) => {
-    await fetch(`http://localhost:5000/api/subjects/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subject_code: code,
-        subject_name: name,
-        department_id: department,
-        semester,
-      }),
-    });
-
+  const resetDialog = () => {
     setEditingId(null);
-    setOpen(false);
-    window.location.reload();
+    setForm(defaultForm);
   };
 
-  // 🔥 DELETE
+  const saveSubject = async () => {
+    const payload = {
+      subject_code: form.code,
+      subject_name: form.name,
+      department_id: Number(form.department),
+      semester: Number(form.semester),
+      year: Number(form.year),
+      regulation: form.regulation,
+    };
+
+    const endpoint = editingId
+      ? `http://localhost:5000/api/subjects/${editingId}`
+      : "http://localhost:5000/api/subjects";
+
+    const method = editingId ? "PUT" : "POST";
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      alert(error.error || "Failed to save subject");
+      return;
+    }
+
+    setOpen(false);
+    resetDialog();
+    fetchSubjects();
+  };
+
   const deleteSubject = async (id: number) => {
     await fetch(`http://localhost:5000/api/subjects/${id}`, {
       method: "DELETE",
     });
 
-    window.location.reload();
+    fetchSubjects();
   };
 
-  // 🔥 CSV UPLOAD
   const uploadCSV = async () => {
     if (!csvFile) {
       alert("Select CSV file");
@@ -102,39 +137,47 @@ const SubjectsPage = () => {
     const formData = new FormData();
     formData.append("file", csvFile);
 
-    await fetch("http://localhost:5000/api/upload-subjects", {
+    const res = await fetch("http://localhost:5000/api/upload-subjects", {
       method: "POST",
       body: formData,
     });
 
-    alert("Subjects uploaded successfully");
-    window.location.reload();
-  };
+    const payload = await res.json();
 
-  const departmentMap: any = {};
-  departments.forEach((d) => {
-    departmentMap[d.id] = deptShortNames[d.name];
-  });
+    if (!res.ok) {
+      alert(payload.error || "CSV upload failed");
+      return;
+    }
+
+    alert(`Inserted ${payload.insertedCount} rows. Skipped ${payload.skippedCount || 0} malformed rows.`);
+    fetchSubjects();
+  };
 
   const columns = [
     {
       key: "code",
       header: "Code",
-      render: (s: any) => (
-        <span className="font-mono text-xs">{s.code}</span>
-      ),
+      render: (s: SubjectRow) => <span className="font-mono text-xs">{s.code}</span>,
     },
     {
       key: "name",
       header: "Subject Name",
-      render: (s: any) => (
-        <span className="font-medium">{s.name}</span>
-      ),
+      render: (s: SubjectRow) => <span className="font-medium">{s.name}</span>,
+    },
+    {
+      key: "regulation",
+      header: "Regulation",
+      render: (s: SubjectRow) => <Badge variant="outline">{s.regulation}</Badge>,
+    },
+    {
+      key: "year",
+      header: "Year",
+      render: (s: SubjectRow) => yearLabelMap[s.year] || s.year,
     },
     {
       key: "department",
       header: "Department",
-      render: (s: any) => (
+      render: (s: SubjectRow) => (
         <Badge variant="secondary" className="text-xs">
           {departmentMap[s.department] || s.department}
         </Badge>
@@ -147,7 +190,7 @@ const SubjectsPage = () => {
     {
       key: "actions",
       header: "Actions",
-      render: (s: any) => (
+      render: (s: SubjectRow) => (
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -155,10 +198,14 @@ const SubjectsPage = () => {
             className="h-7 w-7"
             onClick={() => {
               setEditingId(s.id);
-              setCode(s.code);
-              setName(s.name);
-              setDepartment(String(s.department));
-              setSemester(String(s.semester));
+              setForm({
+                code: s.code,
+                name: s.name,
+                department: String(s.department),
+                semester: String(s.semester),
+                year: String(s.year),
+                regulation: s.regulation,
+              });
               setOpen(true);
             }}
           >
@@ -182,9 +229,7 @@ const SubjectsPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="page-header">Subjects</h1>
-        <p className="page-description">
-          Manage academic subjects
-        </p>
+        <p className="page-description">Manage academic subjects</p>
       </div>
 
       <DataTable
@@ -198,25 +243,28 @@ const SubjectsPage = () => {
         }))}
         actions={
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="file"
               accept=".csv"
+              className="max-w-[230px]"
               onChange={(e) => {
-                if (e.target.files) {
+                if (e.target.files?.[0]) {
                   setCsvFile(e.target.files[0]);
                 }
               }}
             />
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={uploadCSV}
-            >
+            <Button variant="outline" size="sm" onClick={uploadCSV}>
               Upload CSV
             </Button>
 
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog
+              open={open}
+              onOpenChange={(next) => {
+                setOpen(next);
+                if (!next) resetDialog();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 text-xs">
                   <Plus className="h-3.5 w-3.5" /> Add Subject
@@ -225,65 +273,84 @@ const SubjectsPage = () => {
 
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingId
-                      ? "Edit Subject"
-                      : "Add Subject"}
-                  </DialogTitle>
+                  <DialogTitle>{editingId ? "Edit Subject" : "Add Subject"}</DialogTitle>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label>Code</Label>
-                    <Input
-                      value={code}
-                      onChange={(e) =>
-                        setCode(e.target.value)
-                      }
-                    />
+                    <Input value={form.code} onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))} />
                   </div>
 
                   <div className="grid gap-2">
                     <Label>Name</Label>
-                    <Input
-                      value={name}
-                      onChange={(e) =>
-                        setName(e.target.value)
-                      }
-                    />
+                    <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>Department ID</Label>
-                    <Input
-                      value={department}
-                      onChange={(e) =>
-                        setDepartment(e.target.value)
-                      }
-                    />
+                    <Label>Department</Label>
+                    <select
+                      value={form.department}
+                      onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
+                      className="rounded-md border border-input bg-background h-10 px-3"
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {deptShortNames[d.name]}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label>Semester</Label>
-                    <Input
-                      value={semester}
-                      onChange={(e) =>
-                        setSemester(e.target.value)
-                      }
-                    />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Regulation</Label>
+                      <select
+                        value={form.regulation}
+                        onChange={(e) => setForm((p) => ({ ...p, regulation: e.target.value }))}
+                        className="rounded-md border border-input bg-background h-10 px-3"
+                      >
+                        {regulationOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Year</Label>
+                      <select
+                        value={form.year}
+                        onChange={(e) => setForm((p) => ({ ...p, year: e.target.value }))}
+                        className="rounded-md border border-input bg-background h-10 px-3"
+                      >
+                        {yearOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {yearLabelMap[option]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Semester</Label>
+                      <select
+                        value={form.semester}
+                        onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
+                        className="rounded-md border border-input bg-background h-10 px-3"
+                      >
+                        {semesterOptions.map((option) => (
+                          <option key={option} value={option}>
+                            Semester {option}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <Button
-                    onClick={() => {
-                      editingId
-                        ? updateSubject(editingId)
-                        : addSubject();
-                    }}
-                  >
-                    {editingId
-                      ? "Update Subject"
-                      : "Add Subject"}
-                  </Button>
+                  <Button onClick={saveSubject}>{editingId ? "Update Subject" : "Add Subject"}</Button>
                 </div>
               </DialogContent>
             </Dialog>
