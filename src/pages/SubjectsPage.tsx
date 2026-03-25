@@ -25,6 +25,14 @@ const regulationOptions = ["R22", "R25"];
 const semesterOptions = ["1", "2"];
 const yearOptions = ["1", "2", "3", "4"];
 
+const normalizeSemester = (value: string | number) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "";
+  if (parsed === 1 || parsed === 2) return String(parsed);
+  if (parsed >= 1 && parsed <= 8) return parsed % 2 === 0 ? "2" : "1";
+  return "";
+};
+
 type SubjectRow = {
   id: number;
   code: string;
@@ -68,7 +76,7 @@ const SubjectsPage = () => {
           code: s.subject_code,
           name: s.subject_name,
           department: String(s.department_id),
-          semester: String(s.semester),
+          semester: normalizeSemester(s.semester),
           year: String(s.year),
           regulation: s.regulation,
         }));
@@ -186,6 +194,7 @@ const SubjectsPage = () => {
     {
       key: "semester",
       header: "Semester",
+      render: (s: SubjectRow) => `Semester ${s.semester}`,
     },
     {
       key: "actions",
@@ -202,7 +211,7 @@ const SubjectsPage = () => {
                 code: s.code,
                 name: s.name,
                 department: String(s.department),
-                semester: String(s.semester),
+                semester: normalizeSemester(s.semester),
                 year: String(s.year),
                 regulation: s.regulation,
               });

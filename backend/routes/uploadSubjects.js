@@ -13,6 +13,14 @@ const parseIntSafe = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const normalizeSemester = (value) => {
+  const parsed = parseIntSafe(value);
+  if (parsed === null) return null;
+  if ([1, 2].includes(parsed)) return parsed;
+  if (parsed >= 1 && parsed <= 8) return parsed % 2 === 0 ? 2 : 1;
+  return null;
+};
+
 router.post("/", upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "CSV file is required" });
@@ -38,7 +46,7 @@ router.post("/", upload.single("file"), (req, res) => {
         const regulation = String(row.regulation || "").trim();
         const year = parseIntSafe(row.year);
         const department_id = parseIntSafe(row.department_id);
-        const semester = parseIntSafe(row.semester);
+        const semester = normalizeSemester(row.semester);
 
         const isValid =
           subject_code &&

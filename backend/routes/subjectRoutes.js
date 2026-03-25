@@ -10,6 +10,14 @@ const parseOptionalInt = (value) => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const normalizeSemester = (value) => {
+  const parsed = parseOptionalInt(value);
+  if (parsed === null) return null;
+  if ([1, 2].includes(parsed)) return parsed;
+  if (parsed >= 1 && parsed <= 8) return parsed % 2 === 0 ? 2 : 1;
+  return null;
+};
+
 const validateSubjectPayload = ({
   subject_code,
   subject_name,
@@ -21,7 +29,7 @@ const validateSubjectPayload = ({
   const errors = [];
 
   const parsedDepartmentId = parseOptionalInt(department_id);
-  const parsedSemester = parseOptionalInt(semester);
+  const normalizedSemester = normalizeSemester(semester);
   const parsedYear = parseOptionalInt(year);
 
   if (!subject_code || !String(subject_code).trim()) {
@@ -36,8 +44,8 @@ const validateSubjectPayload = ({
     errors.push("department_id must be a positive integer");
   }
 
-  if (![1, 2].includes(parsedSemester)) {
-    errors.push("semester must be either 1 or 2");
+  if (![1, 2].includes(normalizedSemester)) {
+    errors.push("semester must be either 1 or 2 (1..8 will be normalized)");
   }
 
   if (![1, 2, 3, 4].includes(parsedYear)) {
@@ -54,14 +62,13 @@ const validateSubjectPayload = ({
       subject_code: String(subject_code || "").trim(),
       subject_name: String(subject_name || "").trim(),
       department_id: parsedDepartmentId,
-      semester: parsedSemester,
+      semester: normalizedSemester,
       year: parsedYear,
       regulation,
     },
   };
 };
 
-// ✅ GET subjects (supports optional filtering for marks-page dependent dropdowns)
 router.get("/", (req, res) => {
   const { regulation, year, department_id, semester } = req.query;
 
@@ -85,10 +92,10 @@ router.get("/", (req, res) => {
     params.push(parsedDepartmentId);
   }
 
-  const parsedSemester = parseOptionalInt(semester);
-  if (parsedSemester !== null) {
+  const normalizedSemester = normalizeSemester(semester);
+  if (normalizedSemester !== null) {
     where.push("semester = ?");
-    params.push(parsedSemester);
+    params.push(normalizedSemester);
   }
 
   const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
@@ -101,12 +108,11 @@ router.get("/", (req, res) => {
     params,
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(results);
+      res.json(results.map((row) => ({ ...row, semester: normalizeSemester(row.semester) || row.semester })));
     }
   );
 });
 
-// ✅ ADD subject
 router.post("/", (req, res) => {
   const { errors, sanitized } = validateSubjectPayload(req.body);
 
@@ -135,7 +141,6 @@ router.post("/", (req, res) => {
   );
 });
 
-// ✅ UPDATE subject
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const { errors, sanitized } = validateSubjectPayload(req.body);
@@ -166,7 +171,6 @@ router.put("/:id", (req, res) => {
   );
 });
 
-// ✅ DELETE subject
 router.delete("/:id", (req, res) => {
   db.query("DELETE FROM subjects WHERE subject_id=?", [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });

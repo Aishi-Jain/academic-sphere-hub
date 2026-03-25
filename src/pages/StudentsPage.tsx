@@ -9,50 +9,70 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const StudentsPage = () => {
+const normalizeSemester = (value: string | number) => {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return "";
+  if (parsed === 1 || parsed === 2) return String(parsed);
+  if (parsed >= 1 && parsed <= 8) return parsed % 2 === 0 ? "2" : "1";
+  return "";
+};
 
+const StudentsPage = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [open, setOpen] = useState(false);
-  const [students, setStudents] = useState([]);
-  console.log(students);
+  const [students, setStudents] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [section, setSection] = useState("");
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
-  //const [cgpa, setCgpa] = useState("");
+  const [regulation, setRegulation] = useState("R22");
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  useEffect(() => {
+  const resetForm = () => {
+    setName("");
+    setRollNumber("");
+    setDepartment("");
+    setSection("");
+    setYear("");
+    setSemester("");
+    setRegulation("R22");
+    setEditingId(null);
+  };
+
+  const fetchStudents = () => {
     fetch("http://localhost:5000/students")
-      .then(res => res.json())
-      .then(data => {
-        const formatted = data.map((s:any) => ({
+      .then((res) => res.json())
+      .then((data) => {
+        const formatted = data.map((s: any) => ({
           student_id: s.student_id,
           rollNumber: s.roll_number,
           name: s.name,
           department: String(s.department_id),
-          year: s.year,
-          semester: s.semester,
+          year: String(s.year),
+          semester: normalizeSemester(s.semester),
           section: s.section,
-          cgpa: s.cgpa
+          regulation: s.regulation || "R22",
+          cgpa: s.cgpa,
         }));
 
         setStudents(formatted);
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchStudents();
   }, []);
 
-  const addStudent = async (e: any) => {
-    e.preventDefault();   // stops page reload
-
-    console.log("Sending student...");
+  const addStudent = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
 
     const res = await fetch("http://localhost:5000/students", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         name,
@@ -61,43 +81,119 @@ const StudentsPage = () => {
         year,
         semester,
         section,
-        //cgpa: 0
-      })
+        regulation,
+      }),
     });
 
     const data = await res.json();
-    console.log(data);
+    if (!res.ok) {
+      alert(data.error || "Failed to add student");
+      return;
+    }
 
     setOpen(false);
-
-    window.location.reload();
+    resetForm();
+    fetchStudents();
   };
 
+  const updateStudent = async (id: number) => {
+    const res = await fetch(`http://localhost:5000/students/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        rollNumber,
+        department_id: department,
+        year,
+        semester,
+        section,
+        regulation,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Failed to update student");
+      return;
+    }
+
+    setOpen(false);
+    resetForm();
+    fetchStudents();
+  };
+
+  const deleteStudent = async (id: number) => {
+    await fetch(`http://localhost:5000/students/${id}`, {
+      method: "DELETE",
+    });
+
+    fetchStudents();
+  };
+
+  const uploadCSV = async () => {
+    if (!csvFile) {
+      alert("Please select a CSV file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", csvFile);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/upload-students", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Upload failed");
+        return;
+      }
+
+      alert(`Students uploaded successfully. Malformed rows: ${data.malformedRows || 0}`);
+      fetchStudents();
+    } catch (error) {
+      console.error(error);
+      alert("Upload failed");
+    }
+  };
+
+  const departmentMap: any = {};
+  departments.forEach((d) => {
+    departmentMap[d.id] = deptShortNames[d.name];
+  });
+
   const columns = [
-  {
-    key: 'roll_number',
-    header: 'Roll Number',
-    render: (s:any) => (
-      <span className="font-mono text-xs">{s.rollNumber || s.roll_number}</span>
-    )
-  },
-    { key: 'name', header: 'Name' },
     {
-      key: 'department',
-      header: 'Department',
-      render: (s:any) => (
+      key: "roll_number",
+      header: "Roll Number",
+      render: (s: any) => <span className="font-mono text-xs">{s.rollNumber}</span>,
+    },
+    { key: "name", header: "Name" },
+    {
+      key: "department",
+      header: "Department",
+      render: (s: any) => (
         <Badge variant="secondary" className="text-xs">
           {departmentMap[s.department]}
         </Badge>
-      )
+      ),
     },
-    { key: 'year', header: 'Year' },
-    { key: 'semester', header: 'Semester' },
-    { key: 'section', header: 'Section' },
-    //{ key: 'cgpa', header: 'CGPA', render: (s: any) => <span className="font-medium">{s.cgpa}</span> },
     {
-      key: 'actions', header: 'Actions',
-      render: (s:any) => (
+      key: "regulation",
+      header: "Regulation",
+      render: (s: any) => <Badge variant="outline">{s.regulation}</Badge>,
+    },
+    { key: "year", header: "Year" },
+    { key: "semester", header: "Semester", render: (s: any) => `Semester ${s.semester}` },
+    { key: "section", header: "Section" },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (s: any) => (
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -105,15 +201,13 @@ const StudentsPage = () => {
             className="h-7 w-7"
             onClick={() => {
               setEditingId(s.student_id);
-
               setName(s.name);
-              setRollNumber(s.roll_number);
+              setRollNumber(s.rollNumber);
               setDepartment(s.department);
-              setYear(s.year);
-              setSemester(s.semester);
+              setYear(String(s.year));
+              setSemester(normalizeSemester(s.semester));
               setSection(s.section);
-              //setCgpa(s.cgpa);
-
+              setRegulation(s.regulation || "R22");
               setOpen(true);
             }}
           >
@@ -132,78 +226,10 @@ const StudentsPage = () => {
     },
   ];
 
-  const filterOptions = departments.map(d => ({
+  const filterOptions = departments.map((d) => ({
     label: deptShortNames[d.name],
     value: String(d.id),
   }));
-
-  const deleteStudent = async (id:any) => {
-
-    await fetch(`http://localhost:5000/students/${id}`, {
-      method: "DELETE"
-    });
-
-    window.location.reload();
-  };
-
-  const updateStudent = async (id:any) => {
-
-    await fetch(`http://localhost:5000/students/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        rollNumber,
-        department_id: department,
-        year,
-        semester,
-        section,
-        //cgpa
-      })
-    });
-
-    setEditingId(null);
-    setOpen(false);
-    window.location.reload();
-  };
-
-  const departmentMap:any = {};
-  departments.forEach(d => {
-    departmentMap[d.id] = deptShortNames[d.name];
-  });
-
-  const uploadCSV = async () => {
-
-    if (!csvFile) {
-      alert("Please select a CSV file");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", csvFile);
-
-    try {
-
-      const res = await fetch("http://localhost:5000/api/upload-students", {
-        method: "POST",
-        body: formData
-      });
-
-      const data = await res.json();
-      console.log(data);
-
-      alert("Students uploaded successfully");
-
-      window.location.reload();
-
-    } catch (error) {
-      console.error(error);
-      alert("Upload failed");
-    }
-
-  };
 
   return (
     <div className="space-y-6">
@@ -222,7 +248,6 @@ const StudentsPage = () => {
         actions={
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
-
               <input
                 type="file"
                 accept=".csv"
@@ -233,17 +258,17 @@ const StudentsPage = () => {
                 }}
               />
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs"
-                onClick={uploadCSV}
-              >
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={uploadCSV}>
                 <Upload className="h-3.5 w-3.5" /> Upload CSV
               </Button>
-
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog
+              open={open}
+              onOpenChange={(next) => {
+                setOpen(next);
+                if (!next) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1.5 text-xs">
                   <Plus className="h-3.5 w-3.5" /> Add Student
@@ -251,41 +276,39 @@ const StudentsPage = () => {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New Student</DialogTitle>
+                  <DialogTitle>{editingId ? "Edit Student" : "Add New Student"}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label>Name</Label>
-                    <Input
-                      placeholder="Student name"
-                      value={name}
-                      onChange={(e)=>setName(e.target.value)}
-                    />
+                    <Input placeholder="Student name" value={name} onChange={(e) => setName(e.target.value)} />
                   </div>
                   <div className="grid gap-2">
                     <Label>Roll Number</Label>
-                    <Input
-                      placeholder="e.g., 22Q91A0501"
-                      value={rollNumber}
-                      onChange={(e)=>setRollNumber(e.target.value)}
-                    />
+                    <Input placeholder="e.g., 22Q91A0501" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label>Department</Label>
-                      <Select onValueChange={setDepartment}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <Select value={department} onValueChange={setDepartment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
                         <SelectContent>
-                          {departments.map(d => (
-                            <SelectItem key={d.id} value={d.id}>{deptShortNames[d.name]}</SelectItem>
+                          {departments.map((d) => (
+                            <SelectItem key={d.id} value={d.id}>
+                              {deptShortNames[d.name]}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="grid gap-2">
                       <Label>Section</Label>
-                      <Select onValueChange={setSection}>
-                        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <Select value={section} onValueChange={setSection}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="A">A</SelectItem>
                           <SelectItem value="B">B</SelectItem>
@@ -294,24 +317,44 @@ const StudentsPage = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Regulation</Label>
+                      <Select value={regulation} onValueChange={setRegulation}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="R22">R22</SelectItem>
+                          <SelectItem value="R25">R25</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid gap-2">
                       <Label>Year</Label>
-                      <Input
-                        type="number"
-                        placeholder="1-4"
-                        value={year}
-                        onChange={(e)=>setYear(e.target.value)}
-                      />
+                      <Select value={year} onValueChange={setYear}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">I</SelectItem>
+                          <SelectItem value="2">II</SelectItem>
+                          <SelectItem value="3">III</SelectItem>
+                          <SelectItem value="4">IV</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="grid gap-2">
                       <Label>Semester</Label>
-                      <Input
-                        type="number"
-                        placeholder="1-8"
-                        value={semester}
-                        onChange={(e)=>setSemester(e.target.value)}
-                      />
+                      <Select value={semester} onValueChange={setSemester}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Semester 1</SelectItem>
+                          <SelectItem value="2">Semester 2</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <Button
