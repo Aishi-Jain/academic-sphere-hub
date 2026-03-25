@@ -3,6 +3,10 @@ const db = require("../config/db");
 exports.getStudentMarks = (req, res) => {
   const { student_id } = req.query;
 
+  if (!student_id) {
+    return res.status(400).json({ error: "student_id is required" });
+  }
+
   db.query(
     `
     SELECT
@@ -15,8 +19,7 @@ exports.getStudentMarks = (req, res) => {
         m.mid1,
         m.mid2,
         m.ppt,
-        m.total,
-        m.total AS marks
+        m.total
     FROM marks m
     JOIN subjects sub ON m.subject_id = sub.subject_id
     WHERE m.student_id = ?
