@@ -67,6 +67,7 @@ const getStudentProfile = async (roll) => {
 
 const persistSemesters = async (roll, semesters, fetchedAt = new Date()) => {
   const includeLastFetched = await hasResultsLastFetchedColumn();
+  let persistedCount = 0;
 
   for (const semester of semesters) {
     if (semester.skipped) {
@@ -124,17 +125,24 @@ const persistSemesters = async (roll, semesters, fetchedAt = new Date()) => {
         ]
       );
     }
+
+    persistedCount += 1;
   }
+
+  return persistedCount;
 };
 
-const syncResultsForRoll = async (roll) => {
+const syncResultsForRoll = async (roll, options = {}) => {
   const normalizedRoll = String(roll || "").trim().toUpperCase();
   const student = await getStudentProfile(normalizedRoll);
   const catalog = await getExamCodeCatalog();
   const regulation = catalog.btech[student.regulation] ? student.regulation : "R18";
   const warnings = [];
+  const semestersToFetch = Array.isArray(options.semesters) && options.semesters.length > 0
+    ? SEMESTERS.filter((semester) => options.semesters.includes(semester))
+    : SEMESTERS;
 
-  const semesterPromises = SEMESTERS.map(async (semester) => {
+  const semesterPromises = semestersToFetch.map(async (semester) => {
     if (student.isLateralEntry && (semester === "1-1" || semester === "1-2")) {
       return {
         semester,
@@ -190,8 +198,10 @@ const syncResultsForRoll = async (roll) => {
       warnings.push(result.reason?.message || "A semester fetch failed.");
     });
 
+  let persistedSemesterCount = 0;
+
   if (semesters.length > 0) {
-    await persistSemesters(normalizedRoll, semesters);
+    persistedSemesterCount = await persistSemesters(normalizedRoll, semesters);
   }
 
   const summary = buildSummary(semesters);
@@ -199,9 +209,10 @@ const syncResultsForRoll = async (roll) => {
   return {
     student,
     semesters,
+    persistedSemesterCount,
     summary,
     fetchProgress: {
-      stages: ["discovering exam codes", ...SEMESTERS.map((semester) => `fetching ${semester}`)],
+      stages: ["discovering exam codes", ...semestersToFetch.map((semester) => `fetching ${semester}`)],
       completed: semesters
         .filter((semester) => !semester.skipped)
         .map((semester) => semester.semester)

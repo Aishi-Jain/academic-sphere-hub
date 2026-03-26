@@ -9,8 +9,9 @@ const YEAR_TO_CURRENT_SEMESTER = {
 };
 
 const SYNC_TTL_HOURS = 24;
-const BATCH_SIZE = 5;
-const BATCH_DELAY_MS = 2500;
+const BATCH_SIZE = 1;
+const BATCH_DELAY_MS = 3000;
+const FAILED_JOB_COOLDOWN_MS = 30 * 60 * 1000;
 const jobs = new Map();
 
 let hasCollegeCodeColumnPromise;
@@ -83,6 +84,18 @@ const isFreshTimestamp = (timestamp) => {
   return ageMs <= SYNC_TTL_HOURS * 60 * 60 * 1000;
 };
 
+const shouldRefreshRow = (row, hasLastFetchedColumn) => {
+  if (!row.result_id) {
+    return true;
+  }
+
+  if (!hasLastFetchedColumn) {
+    return false;
+  }
+
+  return !isFreshTimestamp(row.last_fetched);
+};
+
 const buildStatusResponse = (job) => ({
   required: Boolean(job.required),
   year: job.year,
@@ -97,15 +110,17 @@ const buildStatusResponse = (job) => ({
     job.totalStudents > 0 ? Number(((job.completedStudents / job.totalStudents) * 100).toFixed(2)) : 100,
   startedAt: job.startedAt,
   updatedAt: job.updatedAt,
+  completedAt: job.completedAt,
   lastError: job.lastError
 });
 
 const getFreshnessForYear = async (year) => {
   const semester = getYearSemester(year);
   const studentRows = await getTargetStudents(year, semester);
+  const hasLastFetchedColumn = await hasResultsLastFetchedColumn();
 
   const staleRollNumbers = studentRows
-    .filter((row) => !row.result_id || !isFreshTimestamp(row.last_fetched))
+    .filter((row) => shouldRefreshRow(row, hasLastFetchedColumn))
     .map((row) => row.roll_number);
 
   return {
@@ -122,15 +137,29 @@ const processJob = async (job) => {
   try {
     for (let index = 0; index < job.rollNumbers.length; index += BATCH_SIZE) {
       const batch = job.rollNumbers.slice(index, index + BATCH_SIZE);
-      const settled = await Promise.allSettled(batch.map((roll) => syncResultsForRoll(roll)));
+      const settled = [];
+
+      for (const roll of batch) {
+        // Analytics needs both current-semester SGPA and all-semester CGPA,
+        // so sync the student's full result history here.
+        // Running one roll at a time keeps the background import gentle on JNTUH.
+        // eslint-disable-next-line no-await-in-loop
+        const result = await Promise.allSettled([syncResultsForRoll(roll)]);
+        settled.push(result[0]);
+      }
 
       settled.forEach((result) => {
         job.completedStudents += 1;
-        if (result.status === "fulfilled") {
+        const persistedSemesterCount = Number(result.status === "fulfilled" ? result.value?.persistedSemesterCount || 0 : 0);
+
+        if (result.status === "fulfilled" && persistedSemesterCount > 0) {
           job.successfulStudents += 1;
         } else {
           job.failedStudents += 1;
-          job.lastError = result.reason?.message || "A student sync failed.";
+          job.lastError =
+            result.status === "rejected"
+              ? result.reason?.message || "A student sync failed."
+              : result.value?.message || "No semester results were persisted for one or more students.";
         }
       });
 
@@ -143,10 +172,12 @@ const processJob = async (job) => {
 
     job.status = "completed";
     job.required = false;
+    job.completedAt = new Date().toISOString();
     job.updatedAt = new Date().toISOString();
   } catch (error) {
     job.status = "failed";
     job.lastError = error.message || "Sync queue failed.";
+    job.completedAt = new Date().toISOString();
     job.updatedAt = new Date().toISOString();
   }
 };
@@ -157,6 +188,13 @@ const ensureYearSync = async (year, options = {}) => {
 
   if (existingJob && existingJob.status === "running") {
     return buildStatusResponse(existingJob);
+  }
+
+  if (!force && existingJob && existingJob.status === "failed" && existingJob.completedAt) {
+    const failedAt = new Date(existingJob.completedAt).getTime();
+    if (!Number.isNaN(failedAt) && Date.now() - failedAt < FAILED_JOB_COOLDOWN_MS) {
+      return buildStatusResponse(existingJob);
+    }
   }
 
   const freshness = await getFreshnessForYear(year);
@@ -176,6 +214,7 @@ const ensureYearSync = async (year, options = {}) => {
       rollNumbers: [],
       startedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
       lastError: null
     };
 
@@ -196,6 +235,7 @@ const ensureYearSync = async (year, options = {}) => {
     rollNumbers,
     startedAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    completedAt: null,
     lastError: null
   };
 
@@ -228,6 +268,7 @@ const getYearSyncStatus = async (year) => {
         : 100,
     startedAt: null,
     updatedAt: null,
+    completedAt: null,
     lastError: null
   };
 };
