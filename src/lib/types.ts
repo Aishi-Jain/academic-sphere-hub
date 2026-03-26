@@ -83,3 +83,53 @@ export interface SeatingAllocation {
   roomNumber: string;
   benches: { student1: Student; student2: Student }[];
 }
+
+export type ResultSubjectStatus = "pass" | "active_backlog" | "cleared_backlog";
+
+export interface MergedSubjectResult {
+  code: string;
+  name: string;
+  internal: number;
+  external: number;
+  total: number;
+  grade: string;
+  credits: string;
+  status: ResultSubjectStatus;
+  clearedFromGrade: string | null;
+  latestExamCode: string;
+  latestAttemptLabel?: string;
+}
+
+export interface SemesterResult {
+  semester: string;
+  regulation: string;
+  examCodesTried: string[];
+  attemptsFetched: number;
+  sgpa: string;
+  hasActiveBacklog: boolean;
+  subjects: MergedSubjectResult[];
+}
+
+export interface ResultsSummary {
+  cgpa: string;
+  activeBacklogCount: number;
+  clearedBacklogCount: number;
+  semesterCount: number;
+}
+
+export interface ResultResponse {
+  student: {
+    name: string;
+    branch: string;
+    college: string;
+    regulation: string;
+  };
+  semesters: SemesterResult[];
+  summary: ResultsSummary;
+  fetchProgress?: {
+    stages: string[];
+    completed: string[];
+  };
+  warnings?: string[];
+  message?: string;
+}
