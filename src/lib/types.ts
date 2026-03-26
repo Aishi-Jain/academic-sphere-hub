@@ -133,3 +133,23 @@ export interface ResultResponse {
   warnings?: string[];
   message?: string;
 }
+
+export interface AnalyticsSyncStatus {
+  required: boolean;
+  year: number;
+  semester: string;
+  status: "idle" | "running" | "completed" | "failed";
+  totalStudents: number;
+  completedStudents: number;
+  queuedStudents: number;
+  successfulStudents: number;
+  failedStudents: number;
+  progressPercent: number;
+  startedAt: string | null;
+  updatedAt: string | null;
+  completedAt?: string | null;
+  lastError: string | null;
+  activeSyncYear?: number | null;
+  canStart?: boolean;
+  message?: string | null;
+}

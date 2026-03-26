@@ -329,6 +329,9 @@ const AnalyticsPage = () => {
   const isEmptyDepartment =
     !loadingDepartment && departmentDetails && departmentDetails.summary.total === 0;
   const isSyncRunning = syncStatus?.status === "running";
+  const isBlockedByAnotherYear = Boolean(
+    syncStatus?.activeSyncYear && syncStatus.activeSyncYear !== selectedYear && syncStatus.canStart === false
+  );
 
   return (
     <div className="space-y-6">
@@ -342,14 +345,14 @@ const AnalyticsPage = () => {
           </div>
           <button
             onClick={triggerSync}
-            disabled={isSyncRunning}
+            disabled={isSyncRunning || isBlockedByAnotherYear}
             className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-              isSyncRunning
+              isSyncRunning || isBlockedByAnotherYear
                 ? "cursor-not-allowed bg-slate-700 text-slate-400"
                 : "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400"
             }`}
           >
-            {isSyncRunning ? "Syncing..." : "Sync Data"}
+            {isSyncRunning ? "Syncing..." : isBlockedByAnotherYear ? "Another Year Syncing" : "Sync Data"}
           </button>
         </div>
 
@@ -375,6 +378,8 @@ const AnalyticsPage = () => {
               <p className="text-sm font-medium text-white">
                 {isSyncRunning
                   ? `Syncing Q9 Results: ${syncStatus?.completedStudents ?? 0}/${syncStatus?.totalStudents ?? 0} complete`
+                  : isBlockedByAnotherYear
+                    ? `Year ${syncStatus?.activeSyncYear} is syncing right now`
                   : syncStatus?.status === "failed"
                     ? "Background sync failed"
                     : "Background sync idle"}
@@ -382,6 +387,8 @@ const AnalyticsPage = () => {
               <p className="mt-1 text-sm text-slate-400">
                 {isSyncRunning
                   ? "Rendering currently available analytics while the selected year refreshes in the background."
+                  : isBlockedByAnotherYear
+                    ? syncStatus?.message || "Wait for the active year sync to finish before starting this one."
                   : syncStatus?.failedStudents
                     ? `${syncStatus.failedStudents} student fetches failed in the last run.`
                     : `Last updated: ${formatSyncTimestamp(syncStatus?.updatedAt ?? null)}`}

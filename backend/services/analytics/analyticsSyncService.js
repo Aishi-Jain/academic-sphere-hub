@@ -10,13 +10,18 @@ const YEAR_TO_CURRENT_SEMESTER = {
 
 const SYNC_TTL_HOURS = 24;
 const BATCH_SIZE = 1;
-const BATCH_DELAY_MS = 3000;
+const MIN_STUDENT_DELAY_MS = 30 * 1000;
+const MAX_STUDENT_DELAY_MS = 60 * 1000;
+const RETRY_DELAY_MS = 15 * 1000;
+const MAX_ATTEMPTS_PER_ROLL = 2;
 const FAILED_JOB_COOLDOWN_MS = 30 * 60 * 1000;
 const jobs = new Map();
+let activeYear = null;
 
 let hasCollegeCodeColumnPromise;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const randomDelay = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 const hasStudentsCollegeCodeColumn = async () => {
   if (!hasCollegeCodeColumnPromise) {
@@ -111,8 +116,33 @@ const buildStatusResponse = (job) => ({
   startedAt: job.startedAt,
   updatedAt: job.updatedAt,
   completedAt: job.completedAt,
-  lastError: job.lastError
+  lastError: job.lastError,
+  activeSyncYear: activeYear,
+  canStart: activeYear === null || activeYear === job.year,
+  message: activeYear !== null && activeYear !== job.year ? `Year ${activeYear} sync is already running.` : null
 });
+
+const runRollSyncWithRetry = async (roll) => {
+  let lastResult = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_ROLL; attempt += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const [result] = await Promise.allSettled([syncResultsForRoll(roll)]);
+
+    if (result.status === "fulfilled" && Number(result.value?.persistedSemesterCount || 0) > 0) {
+      return result;
+    }
+
+    lastResult = result;
+
+    if (attempt < MAX_ATTEMPTS_PER_ROLL) {
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(RETRY_DELAY_MS);
+    }
+  }
+
+  return lastResult;
+};
 
 const getFreshnessForYear = async (year) => {
   const semester = getYearSemester(year);
@@ -135,17 +165,18 @@ const getFreshnessForYear = async (year) => {
 
 const processJob = async (job) => {
   try {
+    activeYear = job.year;
+
     for (let index = 0; index < job.rollNumbers.length; index += BATCH_SIZE) {
       const batch = job.rollNumbers.slice(index, index + BATCH_SIZE);
       const settled = [];
 
       for (const roll of batch) {
-        // Analytics needs both current-semester SGPA and all-semester CGPA,
-        // so sync the student's full result history here.
-        // Running one roll at a time keeps the background import gentle on JNTUH.
+        // Sync one student at a time and retry once before counting it as a fetch error.
+        // The long randomized delay between students mirrors the safer manual bulk-fetch pace.
         // eslint-disable-next-line no-await-in-loop
-        const result = await Promise.allSettled([syncResultsForRoll(roll)]);
-        settled.push(result[0]);
+        const result = await runRollSyncWithRetry(roll);
+        settled.push(result);
       }
 
       settled.forEach((result) => {
@@ -166,7 +197,7 @@ const processJob = async (job) => {
       job.updatedAt = new Date().toISOString();
 
       if (index + BATCH_SIZE < job.rollNumbers.length) {
-        await sleep(BATCH_DELAY_MS);
+        await sleep(randomDelay(MIN_STUDENT_DELAY_MS, MAX_STUDENT_DELAY_MS));
       }
     }
 
@@ -179,6 +210,8 @@ const processJob = async (job) => {
     job.lastError = error.message || "Sync queue failed.";
     job.completedAt = new Date().toISOString();
     job.updatedAt = new Date().toISOString();
+  } finally {
+    activeYear = null;
   }
 };
 
@@ -188,6 +221,29 @@ const ensureYearSync = async (year, options = {}) => {
 
   if (existingJob && existingJob.status === "running") {
     return buildStatusResponse(existingJob);
+  }
+
+  if (activeYear !== null && activeYear !== year) {
+    const activeJob = jobs.get(activeYear);
+    return {
+      required: true,
+      year,
+      semester: getYearSemester(year),
+      status: "idle",
+      totalStudents: 0,
+      completedStudents: 0,
+      queuedStudents: 0,
+      successfulStudents: 0,
+      failedStudents: 0,
+      progressPercent: 0,
+      startedAt: null,
+      updatedAt: activeJob?.updatedAt || null,
+      completedAt: null,
+      lastError: null,
+      activeSyncYear: activeYear,
+      canStart: false,
+      message: `Year ${activeYear} sync is already running.`
+    };
   }
 
   if (!force && existingJob && existingJob.status === "failed" && existingJob.completedAt) {
@@ -247,8 +303,31 @@ const ensureYearSync = async (year, options = {}) => {
 
 const getYearSyncStatus = async (year) => {
   const existingJob = jobs.get(year);
-  if (existingJob) {
+  if (existingJob && (existingJob.status === "running" || activeYear === null || existingJob.year === activeYear)) {
     return buildStatusResponse(existingJob);
+  }
+
+  if (activeYear !== null && activeYear !== year) {
+    const activeJob = jobs.get(activeYear);
+    return {
+      required: true,
+      year,
+      semester: getYearSemester(year),
+      status: "idle",
+      totalStudents: 0,
+      completedStudents: 0,
+      queuedStudents: 0,
+      successfulStudents: 0,
+      failedStudents: 0,
+      progressPercent: 0,
+      startedAt: null,
+      updatedAt: activeJob?.updatedAt || null,
+      completedAt: null,
+      lastError: null,
+      activeSyncYear: activeYear,
+      canStart: false,
+      message: `Year ${activeYear} sync is already running.`
+    };
   }
 
   const freshness = await getFreshnessForYear(year);
@@ -269,7 +348,10 @@ const getYearSyncStatus = async (year) => {
     startedAt: null,
     updatedAt: null,
     completedAt: null,
-    lastError: null
+    lastError: null,
+    activeSyncYear: activeYear,
+    canStart: activeYear === null || activeYear === year,
+    message: activeYear !== null && activeYear !== year ? `Year ${activeYear} sync is already running.` : null
   };
 };
 
