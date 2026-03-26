@@ -308,7 +308,7 @@ router.get("/overview", async (req, res) => {
   const mode = req.query.mode === "overall" ? "overall" : "current";
 
   try {
-    const sync = await ensureYearSync(year, { force: false });
+    const sync = await getYearSyncStatus(year);
     const data =
       mode === "current"
         ? await getCurrentOverview(year, sync)
