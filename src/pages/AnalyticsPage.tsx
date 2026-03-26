@@ -162,6 +162,8 @@ const AnalyticsPage = () => {
 
         setOverview(overviewRes.data);
         setTopStudents(topStudentsRes.data);
+      } catch (err) {
+        console.error(err);
       } finally {
         if (active) {
           setLoadingOverview(false);
@@ -177,9 +179,7 @@ const AnalyticsPage = () => {
   }, [selectedYear, mode]);
 
   useEffect(() => {
-    if (view !== "department") {
-      return;
-    }
+    if (view !== "department") return;
 
     let active = true;
 
@@ -192,6 +192,8 @@ const AnalyticsPage = () => {
 
         if (!active) return;
         setDepartmentDetails(response.data);
+      } catch (err) {
+        console.error(err);
       } finally {
         if (active) {
           setLoadingDepartment(false);
@@ -404,28 +406,31 @@ const AnalyticsPage = () => {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                {(loadingOverview ? Array.from({ length: 3 }) : topStudents.slice(0, 3)).map(
-                  (student, index) => (
-                    <div key={loadingOverview ? index : student.roll_number} className="stat-card text-center">
-                      {loadingOverview ? (
-                        <div className="space-y-3">
-                          <div className="mx-auto h-8 w-8 rounded-full bg-white/10" />
-                          <div className="mx-auto h-5 w-40 rounded bg-white/10" />
-                          <div className="mx-auto h-4 w-28 rounded bg-white/10" />
-                          <div className="mx-auto h-6 w-16 rounded bg-white/10" />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-2xl">{index === 0 ? "1" : index === 1 ? "2" : "3"}</div>
-                          <h3 className="mt-2 font-semibold text-white">{student.name}</h3>
-                          <p className="text-sm text-slate-400">{student.roll_number}</p>
-                          <p className="mt-2 text-lg font-semibold text-emerald-400">
-                            {formatScore(student.score)}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  )
+                {(loadingOverview ? Array.from({ length: 3 }) : (topStudents || []).slice(0, 3)).map(
+                  (student, index) => {
+                    const typedStudent = student as TopStudent;
+                    return (
+                      <div key={loadingOverview ? index : typedStudent.roll_number} className="stat-card text-center">
+                        {loadingOverview ? (
+                          <div className="space-y-3">
+                            <div className="mx-auto h-8 w-8 rounded-full bg-white/10" />
+                            <div className="mx-auto h-5 w-40 rounded bg-white/10" />
+                            <div className="mx-auto h-4 w-28 rounded bg-white/10" />
+                            <div className="mx-auto h-6 w-16 rounded bg-white/10" />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-2xl">{index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}</div>
+                            <h3 className="mt-2 font-semibold text-white">{typedStudent.name}</h3>
+                            <p className="text-sm text-slate-400">{typedStudent.roll_number}</p>
+                            <p className="mt-2 text-lg font-semibold text-emerald-400">
+                              {formatScore(typedStudent.score)}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  }
                 )}
               </div>
 
@@ -616,15 +621,18 @@ const AnalyticsPage = () => {
                     ) : (
                       <table className="w-full text-sm">
                         <tbody>
-                          {sectionData.topStudents.map((student) => (
-                            <tr key={student.roll_number} className="border-b border-gray-800">
-                              <td className="py-1">{student.roll_number}</td>
-                              <td>{student.name}</td>
-                              <td className="text-right font-semibold text-emerald-400">
-                                {formatScore(student.score)}
-                              </td>
-                            </tr>
-                          ))}
+                          {sectionData.topStudents.map((student) => {
+                            const typedStudent = student as TopStudent;
+                            return (
+                                <tr key={typedStudent.roll_number} className="border-b border-gray-800">
+                                  <td className="py-1">{typedStudent.roll_number}</td>
+                                  <td>{typedStudent.name}</td>
+                                  <td className="text-right font-semibold text-emerald-400">
+                                    {formatScore(typedStudent.score)}
+                                  </td>
+                                </tr>
+                            )
+                          })}
                         </tbody>
                       </table>
                     )}
