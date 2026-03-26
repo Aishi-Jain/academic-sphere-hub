@@ -14,6 +14,101 @@ const loadingPhases = [
   "Fetching 4-2",
 ];
 
+const isActiveBacklogGrade = (grade: string | undefined) => {
+  const normalized = String(grade || "").trim().toUpperCase();
+  return normalized === "F" || normalized === "AB" || normalized === "ABSENT";
+};
+
+const normalizeResponse = (payload: any): ResultResponse => {
+  const semesters = Array.isArray(payload?.semesters) ? payload.semesters : [];
+  const normalizedSemesters: SemesterResult[] = semesters.map((semester: any) => {
+    const subjects = Array.isArray(semester?.subjects) ? semester.subjects : [];
+    const normalizedSubjects: MergedSubjectResult[] = subjects.map((subject: any) => {
+      const status =
+        subject?.status ||
+        (isActiveBacklogGrade(subject?.grade)
+          ? "active_backlog"
+          : "pass");
+
+      return {
+        code: subject?.code || "",
+        name: subject?.name || "",
+        internal: Number(subject?.internal ?? 0),
+        external: Number(subject?.external ?? 0),
+        total: Number(subject?.total ?? 0),
+        grade: String(subject?.grade || ""),
+        credits: String(subject?.credits ?? ""),
+        status,
+        clearedFromGrade: subject?.clearedFromGrade ?? null,
+        latestExamCode: String(subject?.latestExamCode || ""),
+        latestAttemptLabel: subject?.latestAttemptLabel,
+      };
+    });
+
+    const hasActiveBacklog =
+      typeof semester?.hasActiveBacklog === "boolean"
+        ? semester.hasActiveBacklog
+        : normalizedSubjects.some((subject) => subject.status === "active_backlog");
+
+    return {
+      semester: String(semester?.semester || ""),
+      regulation: String(semester?.regulation || payload?.student?.regulation || ""),
+      examCodesTried: Array.isArray(semester?.examCodesTried) ? semester.examCodesTried : [],
+      attemptsFetched: Number(semester?.attemptsFetched ?? 0),
+      sgpa: String(semester?.sgpa ?? "0.00"),
+      hasActiveBacklog,
+      subjects: normalizedSubjects,
+    };
+  });
+
+  const fallbackActiveBacklogCount = normalizedSemesters.reduce(
+    (sum, semester) =>
+      sum + semester.subjects.filter((subject) => subject.status === "active_backlog").length,
+    0
+  );
+
+  const fallbackClearedBacklogCount = normalizedSemesters.reduce(
+    (sum, semester) =>
+      sum + semester.subjects.filter((subject) => subject.status === "cleared_backlog").length,
+    0
+  );
+
+  const fallbackCgpa =
+    payload?.summary?.cgpa ??
+    (fallbackActiveBacklogCount > 0
+      ? "Fail"
+      : normalizedSemesters.length > 0
+        ? (
+            normalizedSemesters.reduce(
+              (sum, semester) => sum + (Number.parseFloat(semester.sgpa) || 0),
+              0
+            ) / normalizedSemesters.length
+          ).toFixed(2)
+        : "0.00");
+
+  return {
+    student: {
+      name: payload?.student?.name || "Unknown",
+      branch: payload?.student?.branch || "Unknown",
+      college: payload?.student?.college || "Malla Reddy College of Engineering",
+      regulation: payload?.student?.regulation || "Unknown",
+    },
+    semesters: normalizedSemesters,
+    summary: {
+      cgpa: String(fallbackCgpa),
+      activeBacklogCount:
+        Number(payload?.summary?.activeBacklogCount ?? fallbackActiveBacklogCount),
+      clearedBacklogCount:
+        Number(payload?.summary?.clearedBacklogCount ?? fallbackClearedBacklogCount),
+      semesterCount:
+        Number(payload?.summary?.semesterCount ?? normalizedSemesters.length),
+    },
+    fetchProgress: payload?.fetchProgress,
+    warnings: Array.isArray(payload?.warnings) ? payload.warnings : [],
+    message: payload?.message,
+  };
+};
+
 const ResultsPage = () => {
   const [roll, setRoll] = useState("");
   const [data, setData] = useState<ResultResponse | null>(null);
@@ -48,7 +143,7 @@ const ResultsPage = () => {
       const response = await axios.get<ResultResponse>(
         `http://localhost:5000/api/results/${roll.trim().toUpperCase()}`
       );
-      setData(response.data);
+      setData(normalizeResponse(response.data));
     } catch (error) {
       alert("Error fetching results");
     } finally {
@@ -59,7 +154,7 @@ const ResultsPage = () => {
   const warningList = data?.warnings ?? [];
 
   const summaryCards = useMemo(() => {
-    if (!data) {
+    if (!data?.summary) {
       return null;
     }
 

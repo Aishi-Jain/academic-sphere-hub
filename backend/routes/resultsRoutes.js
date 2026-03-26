@@ -17,13 +17,23 @@ const branchMap = {
 
 const getBranchFromRoll = (roll) => branchMap[roll.substring(6, 8)] || "Unknown";
 
+const isLateralEntryRoll = (roll) => String(roll || "").toUpperCase().includes("Q95");
+
 const inferRegulationFromRoll = (roll) => {
   const prefix = Number.parseInt(String(roll || "").slice(0, 2), 10);
   if (Number.isNaN(prefix)) {
     return "R18";
   }
 
-  return prefix >= 22 ? "R22" : "R18";
+  if (prefix >= 25) {
+    return "R25";
+  }
+
+  if (prefix >= 22) {
+    return "R22";
+  }
+
+  return "R18";
 };
 
 const getStudentProfile = async (roll) => {
@@ -38,12 +48,17 @@ const getStudentProfile = async (roll) => {
     name: student?.name || "Unknown",
     branch: getBranchFromRoll(roll),
     college: "Malla Reddy College of Engineering",
-    regulation: student?.regulation || inferRegulationFromRoll(roll)
+    regulation: student?.regulation || inferRegulationFromRoll(roll),
+    isLateralEntry: isLateralEntryRoll(roll)
   };
 };
 
 const persistSemesters = async (roll, semesters) => {
   for (const semester of semesters) {
+    if (semester.skipped) {
+      continue;
+    }
+
     const [existing] = await db.promise().query(
       "SELECT id FROM results WHERE roll_number = ? AND semester = ?",
       [roll, semester.semester]
@@ -101,6 +116,20 @@ router.get("/:roll", async (req, res) => {
     const warnings = [];
 
     const semesterPromises = SEMESTERS.map(async (semester) => {
+      if (student.isLateralEntry && (semester === "1-1" || semester === "1-2")) {
+        return {
+          semester,
+          regulation,
+          examCodesTried: [],
+          attemptsFetched: 0,
+          sgpa: "N/A",
+          hasActiveBacklog: false,
+          skipped: true,
+          skipReason: "Lateral entry student; first-year results are not applicable.",
+          subjects: []
+        };
+      }
+
       const examCodes = catalog.btech[regulation]?.[semester] || [];
 
       if (examCodes.length === 0) {
@@ -154,7 +183,9 @@ router.get("/:roll", async (req, res) => {
       summary,
       fetchProgress: {
         stages: ["discovering exam codes", ...SEMESTERS.map((semester) => `fetching ${semester}`)],
-        completed: semesters.map((semester) => semester.semester)
+        completed: semesters
+          .filter((semester) => !semester.skipped)
+          .map((semester) => semester.semester)
       },
       warnings,
       message: semesters.length === 0 ? "No results found" : undefined

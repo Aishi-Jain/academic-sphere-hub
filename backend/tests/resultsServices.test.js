@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { extractExamCode, resolveSemester } = require("../services/results/examCodeCatalog");
+const { extractExamCode, resolveSemester, getExamCodeCatalog } = require("../services/results/examCodeCatalog");
 const { mergeSemesterAttempts } = require("../services/results/resultMerger");
 const { calculateSGPA, buildSummary } = require("../services/results/resultCalculator");
 const { normalizeGrade, cleanNumber } = require("../services/results/resultFetcher");
@@ -16,6 +16,21 @@ test("resolveSemester matches all supported year-semester labels", () => {
   assert.equal(resolveSemester(" B.TECH I YEAR I REGULAR RESULTS "), "1-1");
   assert.equal(resolveSemester(" B.TECH II YEAR II SUPPLEMENTARY RESULTS "), "2-2");
   assert.equal(resolveSemester(" B.TECH IV YEAR II RESULTS "), "4-2");
+});
+
+test("exam code catalog exposes R25 buckets", async () => {
+  const catalog = await getExamCodeCatalog({ forceRefresh: false });
+  assert.ok(catalog.btech.R25);
+  assert.deepEqual(Object.keys(catalog.btech.R25), [
+    "1-1",
+    "1-2",
+    "2-1",
+    "2-2",
+    "3-1",
+    "3-2",
+    "4-1",
+    "4-2"
+  ]);
 });
 
 test("normalizeGrade and cleanNumber normalize raw scraped values", () => {
@@ -172,4 +187,22 @@ test("calculateSGPA and buildSummary keep CGPA valid until active backlogs remai
   ]);
 
   assert.equal(failSummary.cgpa, "Fail");
+});
+
+test("buildSummary ignores lateral-entry skipped semesters", () => {
+  const summary = buildSummary([
+    {
+      skipped: true,
+      sgpa: "N/A",
+      subjects: []
+    },
+    {
+      skipped: false,
+      sgpa: "8.20",
+      subjects: [{ status: "pass" }]
+    }
+  ]);
+
+  assert.equal(summary.cgpa, "8.20");
+  assert.equal(summary.semesterCount, 1);
 });

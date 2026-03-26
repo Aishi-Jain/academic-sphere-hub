@@ -14,7 +14,8 @@ const cloneCatalog = (catalog) => JSON.parse(JSON.stringify(catalog));
 const buildEmptyCatalog = () => ({
   btech: {
     R18: Object.fromEntries(SEMESTERS.map((semester) => [semester, []])),
-    R22: Object.fromEntries(SEMESTERS.map((semester) => [semester, []]))
+    R22: Object.fromEntries(SEMESTERS.map((semester) => [semester, []])),
+    R25: Object.fromEntries(SEMESTERS.map((semester) => [semester, []]))
   }
 });
 
@@ -59,7 +60,7 @@ const parseCatalog = (html) => {
       return;
     }
 
-    ["R18", "R22"].forEach((regulation) => {
+    ["R18", "R22", "R25"].forEach((regulation) => {
       if (!rowText.includes(regulation)) {
         return;
       }

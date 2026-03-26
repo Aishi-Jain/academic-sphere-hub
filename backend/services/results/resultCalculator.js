@@ -34,21 +34,23 @@ const calculateSGPA = (subjects) => {
 };
 
 const buildSummary = (semesters) => {
-  const activeBacklogCount = semesters.reduce(
+  const countedSemesters = semesters.filter((semester) => !semester.skipped);
+
+  const activeBacklogCount = countedSemesters.reduce(
     (sum, semester) =>
       sum +
       semester.subjects.filter((subject) => subject.status === "active_backlog").length,
     0
   );
 
-  const clearedBacklogCount = semesters.reduce(
+  const clearedBacklogCount = countedSemesters.reduce(
     (sum, semester) =>
       sum +
       semester.subjects.filter((subject) => subject.status === "cleared_backlog").length,
     0
   );
 
-  const totalSgpa = semesters.reduce(
+  const totalSgpa = countedSemesters.reduce(
     (sum, semester) => sum + (Number.parseFloat(semester.sgpa) || 0),
     0
   );
@@ -56,15 +58,15 @@ const buildSummary = (semesters) => {
   const cgpa =
     activeBacklogCount > 0
       ? "Fail"
-      : semesters.length > 0
-        ? (totalSgpa / semesters.length).toFixed(2)
+      : countedSemesters.length > 0
+        ? (totalSgpa / countedSemesters.length).toFixed(2)
         : "0.00";
 
   return {
     cgpa,
     activeBacklogCount,
     clearedBacklogCount,
-    semesterCount: semesters.length
+    semesterCount: countedSemesters.length
   };
 };
 
