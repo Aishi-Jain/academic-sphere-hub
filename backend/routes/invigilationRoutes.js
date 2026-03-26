@@ -588,7 +588,7 @@ router.get("/cycles/:id", async (req, res) => {
 });
 
 router.put("/cycles/:id", async (req, res) => {
-  const connection = await db.promise().getConnection();
+  const connection = db.promise();
 
   try {
     const cycleId = Number(req.params.id);
@@ -719,8 +719,6 @@ router.put("/cycles/:id", async (req, res) => {
     await connection.rollback();
     console.error("UPDATE INVIGILATION CYCLE ERROR:", error);
     res.status(500).json({ error: "Failed to update invigilation cycle" });
-  } finally {
-    connection.release();
   }
 });
 
@@ -847,7 +845,7 @@ router.get("/hod/cycles/:id", async (req, res) => {
 });
 
 router.put("/hod/cycles/:id/faculty-slot-allocations", async (req, res) => {
-  const connection = await db.promise().getConnection();
+  const connection = db.promise();
 
   try {
     const cycleId = Number(req.params.id);
@@ -954,8 +952,6 @@ router.put("/hod/cycles/:id/faculty-slot-allocations", async (req, res) => {
     await connection.rollback();
     console.error("HOD ALLOCATION UPDATE ERROR:", error);
     res.status(500).json({ error: "Failed to save HOD allocations" });
-  } finally {
-    connection.release();
   }
 });
 
@@ -1003,7 +999,7 @@ router.get("/faculty/cycles/:id", async (req, res) => {
 });
 
 router.put("/faculty/cycles/:id/choices", async (req, res) => {
-  const connection = await db.promise().getConnection();
+  const connection = db.promise();
 
   try {
     const cycleId = Number(req.params.id);
@@ -1160,13 +1156,11 @@ router.put("/faculty/cycles/:id/choices", async (req, res) => {
     await connection.rollback();
     console.error("FACULTY CHOICES UPDATE ERROR:", error);
     res.status(500).json({ error: "Failed to save faculty slot choices" });
-  } finally {
-    connection.release();
   }
 });
 
 router.post("/cycles/:id/generate", async (req, res) => {
-  const connection = await db.promise().getConnection();
+  const connection = db.promise();
 
   try {
     const cycleId = Number(req.params.id);
@@ -1384,8 +1378,6 @@ router.post("/cycles/:id/generate", async (req, res) => {
     await connection.rollback();
     console.error("GENERATE INVIGILATION ASSIGNMENTS ERROR:", error);
     res.status(500).json({ error: "Failed to generate invigilation assignments" });
-  } finally {
-    connection.release();
   }
 });
 

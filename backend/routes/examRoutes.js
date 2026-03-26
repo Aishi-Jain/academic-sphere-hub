@@ -85,12 +85,51 @@ router.put("/:id", (req, res) => {
 
 // DELETE exam
 router.delete("/:id", (req, res) => {
-  db.query("DELETE FROM exams WHERE exam_id = ?", [req.params.id], (err) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+  const examId = Number(req.params.id);
+  const connection = db.promise();
+
+  (async () => {
+    try {
+      await connection.beginTransaction();
+
+      await connection.query(
+        `
+          UPDATE invigilation_sessions
+          SET source_exam_id = NULL
+          WHERE source_exam_id = ?
+        `,
+        [examId]
+      );
+
+      await connection.query(
+        `
+          DELETE FROM seating_allocation
+          WHERE exam_id = ?
+        `,
+        [examId]
+      );
+
+      const [result] = await connection.query(
+        `
+          DELETE FROM exams
+          WHERE exam_id = ?
+        `,
+        [examId]
+      );
+
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        return res.status(404).json({ error: "Exam not found" });
+      }
+
+      await connection.commit();
+      return res.json({ message: "Deleted" });
+    } catch (err) {
+      await connection.rollback();
+      console.error("DELETE EXAM ERROR:", err);
+      return res.status(500).json({ error: err.message || "Failed to delete exam" });
     }
-    res.json({ message: "Deleted" });
-  });
+  })();
 });
 
 module.exports = router;
