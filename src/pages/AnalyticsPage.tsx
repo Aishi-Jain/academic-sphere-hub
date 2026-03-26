@@ -603,7 +603,7 @@ const AnalyticsPage = () => {
               </div>
 
               <div className="grid gap-6 lg:grid-cols-2">
-                {Object.entries(departmentDetails.classes).map(([section, sectionData]) => (
+                {(Object.entries(departmentDetails.classes) as [string, SectionSummary][]).map(([section, sectionData]) => (
                   <div key={section} className="stat-card p-5">
                     <h3 className="mb-3 text-lg font-semibold text-white">Section {section}</h3>
                     <div className="mb-4 flex justify-between text-sm text-gray-400">
