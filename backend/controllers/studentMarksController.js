@@ -14,12 +14,7 @@ exports.getStudentMarks = (req, res) => {
         sub.subject_code,
         sub.subject_name,
         sub.semester,
-        sub.year,
-        sub.regulation,
-        m.mid1,
-        m.mid2,
-        m.ppt,
-        m.total
+        m.marks
     FROM marks m
     JOIN subjects sub ON m.subject_id = sub.subject_id
     WHERE m.student_id = ?

@@ -14,25 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const yearLabelMap: Record<string, string> = {
-  "1": "I",
-  "2": "II",
-  "3": "III",
-  "4": "IV",
-};
-
-const regulationOptions = ["R22", "R25"];
-const semesterOptions = ["1", "2"];
-const yearOptions = ["1", "2", "3", "4"];
-
-const normalizeSemester = (value: string | number) => {
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) return "";
-  if (parsed === 1 || parsed === 2) return String(parsed);
-  if (parsed >= 1 && parsed <= 8) return parsed % 2 === 0 ? "2" : "1";
-  return "";
-};
-
+// --- MISSING DEFINITIONS ADDED HERE ---
 type SubjectRow = {
   id: number;
   code: string;
@@ -43,14 +25,26 @@ type SubjectRow = {
   regulation: string;
 };
 
+const regulationOptions = ["R18", "R22", "R25"];
+const yearOptions = ["1", "2", "3", "4"];
+const semesterOptions = ["1", "2"];
+
+const yearLabelMap: Record<string, string> = {
+  "1": "I Year",
+  "2": "II Year",
+  "3": "III Year",
+  "4": "IV Year",
+};
+
 const defaultForm = {
   code: "",
   name: "",
   department: "",
-  semester: "1",
   year: "1",
+  semester: "1",
   regulation: "R22",
 };
+// --------------------------------------
 
 const SubjectsPage = () => {
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
@@ -76,11 +70,10 @@ const SubjectsPage = () => {
           code: s.subject_code,
           name: s.subject_name,
           department: String(s.department_id),
-          semester: normalizeSemester(s.semester),
+          semester: String(s.semester),
           year: String(s.year),
           regulation: s.regulation,
         }));
-
         setSubjects(formatted);
       })
       .catch((err) => console.error(err));
@@ -129,10 +122,10 @@ const SubjectsPage = () => {
   };
 
   const deleteSubject = async (id: number) => {
+    if(!confirm("Are you sure?")) return;
     await fetch(`http://localhost:5000/api/subjects/${id}`, {
       method: "DELETE",
     });
-
     fetchSubjects();
   };
 
@@ -141,7 +134,6 @@ const SubjectsPage = () => {
       alert("Select CSV file");
       return;
     }
-
     const formData = new FormData();
     formData.append("file", csvFile);
 
@@ -151,13 +143,11 @@ const SubjectsPage = () => {
     });
 
     const payload = await res.json();
-
     if (!res.ok) {
       alert(payload.error || "CSV upload failed");
       return;
     }
-
-    alert(`Inserted ${payload.insertedCount} rows. Skipped ${payload.skippedCount || 0} malformed rows.`);
+    alert(`Inserted ${payload.insertedCount} rows.`);
     fetchSubjects();
   };
 
@@ -210,9 +200,9 @@ const SubjectsPage = () => {
               setForm({
                 code: s.code,
                 name: s.name,
-                department: String(s.department),
-                semester: normalizeSemester(s.semester),
-                year: String(s.year),
+                department: s.department,
+                semester: s.semester,
+                year: s.year,
                 regulation: s.regulation,
               });
               setOpen(true);
