@@ -1,6 +1,6 @@
 import {
   Home, LayoutDashboard, Users, GraduationCap, Building2, BookOpen,
-  DoorOpen, FileText, Grid3X3, ClipboardList, BarChart3, Megaphone,
+  DoorOpen, FileText, Grid3X3, ClipboardList, BarChart3, Megaphone, ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -25,6 +25,7 @@ const allItems = [
   { title: "Classrooms", url: "/classrooms", icon: DoorOpen, roles: ['admin'] },
   { title: "Exams", url: "/exams", icon: FileText, roles: ['admin'] },
   { title: "Seating Allocation", url: "/seating", icon: Grid3X3, roles: ['admin', 'faculty', 'student'] },
+  { title: "Invigilation", url: "/invigilation", icon: ShieldCheck, roles: ['admin', 'faculty', 'student'] },
   { title: "Results", url: "/results", icon: ClipboardList, roles: ['admin', 'faculty', 'student'] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ['admin', 'faculty', 'student'] },
   { title: "Circulars", url: "/circulars", icon: Megaphone, roles: ['admin', 'faculty', 'student'] },

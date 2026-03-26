@@ -1,10 +1,11 @@
-const uploadStudents = require("./routes/uploadStudents");
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/db");
 
+const uploadStudents = require("./routes/uploadStudents");
 const studentsRoutes = require("./routes/studentsRoutes");
 const facultyRoutes = require("./routes/facultyRoutes");
+const uploadFaculty = require("./routes/uploadFaculty");
 const classroomRoutes = require("./routes/classroomRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const uploadSubjects = require("./routes/uploadSubjects");
@@ -21,8 +22,10 @@ const facultyDashboardRoutes = require("./routes/facultyDashboardRoutes");
 const studentDashboardRoutes = require("./routes/studentDashboardRoutes");
 const marksRoutes = require("./routes/marksRoutes");
 const studentMarksRoutes = require("./routes/studentMarksRoutes");
+const invigilationRoutes = require("./routes/invigilationRoutes");
 
 const app = express();
+const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -30,6 +33,7 @@ app.use(express.json());
 app.use("/students", studentsRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api", uploadStudents);
+app.use("/api", uploadFaculty);
 app.use("/api/classrooms", classroomRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/upload-subjects", uploadSubjects);
@@ -47,74 +51,32 @@ app.use("/api/faculty-dashboard", facultyDashboardRoutes);
 app.use("/api/student-dashboard", studentDashboardRoutes);
 app.use("/api/marks", marksRoutes);
 app.use("/api/student/marks", studentMarksRoutes);
-
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
-
-const uploadFaculty=require("./routes/uploadFaculty");
-app.use("/api",uploadFaculty);
-
-const PORT = 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.use("/api/invigilation", invigilationRoutes);
 
 app.post("/login", (req, res) => {
-
   const { username, password } = req.body;
-
-  const sql = "SELECT * FROM users WHERE username=? AND password=?";
-
-  db.query(sql, [username, password], (err, result) => {
-
-    if (err) {
-      return res.status(500).json(err);
-    }
-
-    if (result.length === 0) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const user = result[0];
-
-    res.json({
-      user_id: user.id,
-      role: user.role,
-      username: user.username,
-      reference_id: user.reference_id 
-    });
-
-  });
-
-});
-
-app.post("/login", (req, res) => {
-
-  const { username, password } = req.body;
-
   const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
 
   db.query(sql, [username, password], (err, result) => {
-
     if (err) {
       return res.status(500).json(err);
     }
 
     if (result.length === 0) {
-      return res.status(401).json({
-        message: "Invalid username or password"
-      });
+      return res.status(401).json({ message: "Invalid username or password" });
     }
 
     const user = result[0];
 
     res.json({
+      user_id: user.id ?? user.user_id ?? null,
       role: user.role,
-      user_id: user.user_id
+      username: user.username,
+      reference_id: user.reference_id ?? null,
     });
-
   });
+});
 
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

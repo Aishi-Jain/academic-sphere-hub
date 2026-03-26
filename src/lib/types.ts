@@ -153,3 +153,100 @@ export interface AnalyticsSyncStatus {
   canStart?: boolean;
   message?: string | null;
 }
+
+export interface InvigilationSession {
+  id: number;
+  session_order: number;
+  exam_date: string;
+  session_type: "FN" | "AN";
+  source_exam_id: number | null;
+  source_exam_name?: string | null;
+  occupied_room_count: number;
+  capacity_slots: number;
+  booked_slots?: number;
+  available_slots?: number;
+}
+
+export interface InvigilationTimetableRow {
+  department_id: number;
+  department_name: string;
+  department_short_name: string;
+  sessions: {
+    session_id: number;
+    subject_id: number | null;
+    subject_label: string;
+  }[];
+}
+
+export interface InvigilationCycleDetail {
+  cycle: {
+    id: number;
+    title: string;
+    year: number;
+    semester: number;
+    booking_deadline: string;
+    status: "draft" | "published" | "closed" | "generated";
+    created_by?: string | null;
+  };
+  sessions: InvigilationSession[];
+  timetable: InvigilationTimetableRow[];
+  department_slots: {
+    department_id: number;
+    department_name: string;
+    department_short_name: string;
+    allocated_slots: number;
+    assigned_slots: number;
+  }[];
+  hod_allocations: {
+    faculty_id: string;
+    faculty_name: string;
+    designation: string;
+    department_id: number;
+    department_name: string;
+    required_slot_count: number;
+    selected_session_ids: number[];
+  }[];
+  faculty_choices: {
+    faculty_id: string;
+    faculty_name: string;
+    department_id: number;
+    department_name: string;
+    session_id: number;
+    required_slot_count: number;
+    chosen_at: string;
+  }[];
+  results: {
+    session_id: number;
+    room_id: number;
+    room_number: string;
+    assignment_source: "selected" | "auto_fill";
+    faculty_1: {
+      faculty_id: string;
+      name: string;
+      department_name: string;
+    };
+    faculty_2: {
+      faculty_id: string;
+      name: string;
+      department_name: string;
+    };
+  }[];
+  meta?: {
+    eligible_departments: {
+      id: number;
+      name: string;
+      shortName: string;
+    }[];
+    exams: {
+      exam_id: number;
+      exam_name: string;
+      year: number;
+      semester: number;
+    }[];
+  };
+  faculty_context?: {
+    faculty_id: string;
+    required_slot_count: number;
+    selected_session_ids: number[];
+  };
+}
