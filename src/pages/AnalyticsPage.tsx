@@ -11,6 +11,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import type { AnalyticsSyncStatus } from "@/lib/types";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -31,6 +32,7 @@ interface OverviewResponse {
   averageValue: string;
   averageLabel: string;
   departments: DepartmentAggregate[];
+  sync?: AnalyticsSyncStatus;
 }
 
 interface TopStudent {
@@ -136,6 +138,19 @@ const formatScore = (score: number | string) => Number(score || 0).toFixed(2);
 const buildUrl = (path: string, year: number, mode: Mode) =>
   `${BASE_URL}${path}?year=${year}&mode=${mode}`;
 
+const buildSyncUrl = (path: string, year: number) => `${BASE_URL}${path}?year=${year}`;
+
+const formatSyncTimestamp = (value: string | null) => {
+  if (!value) return "Not synced yet";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Not synced yet";
+  }
+
+  return parsed.toLocaleString();
+};
+
 const AnalyticsPage = () => {
   const [selectedYear, setSelectedYear] = useState(4);
   const [mode, setMode] = useState<Mode>("current");
@@ -146,6 +161,8 @@ const AnalyticsPage = () => {
   const [departmentDetails, setDepartmentDetails] = useState<DepartmentResponse | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [loadingDepartment, setLoadingDepartment] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<AnalyticsSyncStatus | null>(null);
+  const [syncRefreshing, setSyncRefreshing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -162,6 +179,7 @@ const AnalyticsPage = () => {
 
         setOverview(overviewRes.data);
         setTopStudents(topStudentsRes.data);
+        setSyncStatus(overviewRes.data.sync ?? null);
       } catch (err) {
         console.error(err);
       } finally {
@@ -208,6 +226,76 @@ const AnalyticsPage = () => {
     };
   }, [view, selectedDept, selectedYear, mode]);
 
+  useEffect(() => {
+    if (!syncStatus || syncStatus.status !== "running") {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const pollSyncStatus = async () => {
+      try {
+        const response = await axios.get<AnalyticsSyncStatus>(
+          buildSyncUrl("/api/analytics/sync-status", selectedYear)
+        );
+
+        if (cancelled) return;
+
+        setSyncStatus(response.data);
+
+        if (response.data.status !== "running") {
+          setSyncRefreshing(true);
+
+          const [overviewRes, topStudentsRes] = await Promise.all([
+            axios.get<OverviewResponse>(buildUrl("/api/analytics/overview", selectedYear, mode)),
+            axios.get<TopStudent[]>(buildUrl("/api/analytics/top-students", selectedYear, mode)),
+          ]);
+
+          if (cancelled) return;
+
+          setOverview(overviewRes.data);
+          setTopStudents(topStudentsRes.data);
+          setSyncStatus(overviewRes.data.sync ?? response.data);
+
+          if (view === "department") {
+            const departmentRes = await axios.get<DepartmentResponse>(
+              buildUrl(`/api/analytics/department/${selectedDept}`, selectedYear, mode)
+            );
+
+            if (!cancelled) {
+              setDepartmentDetails(departmentRes.data);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) {
+          setSyncRefreshing(false);
+        }
+      }
+    };
+
+    const intervalId = window.setInterval(pollSyncStatus, 3000);
+    void pollSyncStatus();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [mode, selectedDept, selectedYear, syncStatus, view]);
+
+  const triggerSync = async () => {
+    try {
+      const response = await axios.post<AnalyticsSyncStatus>(
+        buildSyncUrl("/api/analytics/sync", selectedYear)
+      );
+      setSyncStatus(response.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const departmentChart = useMemo(() => {
     return {
       labels: overview?.departments.map((department) => DEPARTMENT_MAP[department.department_id]) ?? [],
@@ -240,15 +328,29 @@ const AnalyticsPage = () => {
   const isEmptyOverview = !loadingOverview && overview && overview.totalStudents === 0;
   const isEmptyDepartment =
     !loadingDepartment && departmentDetails && departmentDetails.summary.total === 0;
+  const isSyncRunning = syncStatus?.status === "running";
 
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5">
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-white">Analytics</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Year-wise academic performance insights across current semester and cumulative results.
-          </p>
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Analytics</h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Year-wise academic performance insights across current semester and cumulative results.
+            </p>
+          </div>
+          <button
+            onClick={triggerSync}
+            disabled={isSyncRunning}
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+              isSyncRunning
+                ? "cursor-not-allowed bg-slate-700 text-slate-400"
+                : "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400"
+            }`}
+          >
+            {isSyncRunning ? "Syncing..." : "Sync Data"}
+          </button>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -265,6 +367,40 @@ const AnalyticsPage = () => {
               {year.label}
             </button>
           ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">
+                {isSyncRunning
+                  ? `Syncing Q9 Results: ${syncStatus?.completedStudents ?? 0}/${syncStatus?.totalStudents ?? 0} complete`
+                  : syncStatus?.status === "failed"
+                    ? "Background sync failed"
+                    : "Background sync idle"}
+              </p>
+              <p className="mt-1 text-sm text-slate-400">
+                {isSyncRunning
+                  ? "Rendering currently available analytics while the selected year refreshes in the background."
+                  : syncStatus?.failedStudents
+                    ? `${syncStatus.failedStudents} student fetches failed in the last run.`
+                    : `Last updated: ${formatSyncTimestamp(syncStatus?.updatedAt ?? null)}`}
+              </p>
+            </div>
+            <div className="text-sm text-slate-300">
+              <span className="mr-4">Queued: {syncStatus?.queuedStudents ?? 0}</span>
+              <span className="mr-4 text-emerald-400">Success: {syncStatus?.successfulStudents ?? 0}</span>
+              <span className="text-rose-400">Failed: {syncStatus?.failedStudents ?? 0}</span>
+            </div>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className={`h-full rounded-full transition-all ${
+                syncStatus?.status === "failed" ? "bg-rose-500" : "bg-amber-400"
+              }`}
+              style={{ width: `${Math.max(syncStatus?.progressPercent ?? 0, 3)}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -317,7 +453,7 @@ const AnalyticsPage = () => {
       {view === "overall" && (
         <>
           <div className="grid gap-4 md:grid-cols-3">
-            {loadingOverview || !overview ? (
+            {loadingOverview || !overview || syncRefreshing ? (
               <>
                 <LoadingCard />
                 <LoadingCard />
@@ -362,7 +498,7 @@ const AnalyticsPage = () => {
                       Pass percentage by department for the selected year and mode.
                     </p>
                   </div>
-                  {loadingOverview || !overview ? (
+                  {loadingOverview || !overview || syncRefreshing ? (
                     <LoadingChart />
                   ) : (
                     <div className="h-[340px]">
@@ -378,7 +514,7 @@ const AnalyticsPage = () => {
                       Distribution of students in the selected year.
                     </p>
                   </div>
-                  {loadingOverview || !overview ? (
+                  {loadingOverview || !overview || syncRefreshing ? (
                     <LoadingChart />
                   ) : (
                     <div className="flex h-[340px] items-center justify-center">
@@ -406,12 +542,15 @@ const AnalyticsPage = () => {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                {(loadingOverview ? Array.from({ length: 3 }) : (topStudents || []).slice(0, 3)).map(
+                {((loadingOverview || syncRefreshing) ? Array.from({ length: 3 }) : (topStudents || []).slice(0, 3)).map(
                   (student, index) => {
                     const typedStudent = student as TopStudent;
                     return (
-                      <div key={loadingOverview ? index : typedStudent.roll_number} className="stat-card text-center">
-                        {loadingOverview ? (
+                      <div
+                        key={(loadingOverview || syncRefreshing) ? index : typedStudent.roll_number}
+                        className="stat-card text-center"
+                      >
+                        {loadingOverview || syncRefreshing ? (
                           <div className="space-y-3">
                             <div className="mx-auto h-8 w-8 rounded-full bg-white/10" />
                             <div className="mx-auto h-5 w-40 rounded bg-white/10" />
@@ -444,7 +583,7 @@ const AnalyticsPage = () => {
                   </div>
                 </div>
 
-                {loadingOverview ? (
+                {loadingOverview || syncRefreshing ? (
                   <div className="space-y-3">
                     {Array.from({ length: 6 }).map((_, index) => (
                       <div key={index} className="h-10 rounded bg-white/5" />
@@ -502,7 +641,7 @@ const AnalyticsPage = () => {
             ))}
           </div>
 
-          {loadingDepartment || !departmentDetails ? (
+          {loadingDepartment || !departmentDetails || syncRefreshing ? (
             <>
               <div className="grid gap-4 md:grid-cols-3">
                 <LoadingCard />

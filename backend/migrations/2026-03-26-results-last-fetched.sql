@@ -1,0 +1,2 @@
+ALTER TABLE results
+ADD COLUMN last_fetched DATETIME NULL;

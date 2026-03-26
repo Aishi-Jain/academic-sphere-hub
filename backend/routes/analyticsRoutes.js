@@ -1,13 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
-
-const YEAR_TO_CURRENT_SEMESTER = {
-  1: "1-1",
-  2: "2-1",
-  3: "3-1",
-  4: "4-1"
-};
+const { YEAR_TO_CURRENT_SEMESTER, ensureYearSync, getYearSyncStatus } = require("../services/analytics/analyticsSyncService");
 
 const parseYear = (value) => {
   const year = Number.parseInt(String(value || ""), 10);
@@ -23,16 +17,17 @@ const requireYear = (req, res) => {
   return year;
 };
 
-const buildOverviewResponse = ({ totalStudents, passed, failed, averageValue, averageLabel, departments }) => ({
+const buildOverviewResponse = ({ totalStudents, passed, failed, averageValue, averageLabel, departments, sync }) => ({
   totalStudents,
   passPercentage: totalStudents > 0 ? ((passed / totalStudents) * 100).toFixed(2) : "0.00",
   failPercentage: totalStudents > 0 ? ((failed / totalStudents) * 100).toFixed(2) : "0.00",
   averageValue,
   averageLabel,
-  departments
+  departments,
+  sync
 });
 
-const getCurrentOverview = async (year) => {
+const getCurrentOverview = async (year, sync) => {
   const semester = YEAR_TO_CURRENT_SEMESTER[year];
 
   const [totalRows] = await db.promise().query(
@@ -82,11 +77,12 @@ const getCurrentOverview = async (year) => {
     failed: Number(passFailRows[0]?.failed || 0),
     averageValue: Number(avgRows[0]?.average_value || 0).toFixed(2),
     averageLabel: "Avg SGPA",
-    departments
+    departments,
+    sync
   });
 };
 
-const getAllSemesterOverview = async (year) => {
+const getAllSemesterOverview = async (year, sync) => {
   const [cgpaRows] = await db.promise().query(
     `SELECT
        s.roll_number,
@@ -144,7 +140,8 @@ const getAllSemesterOverview = async (year) => {
     failed,
     averageValue,
     averageLabel: "Avg CGPA",
-    departments
+    departments,
+    sync
   });
 };
 
@@ -311,13 +308,15 @@ router.get("/overview", async (req, res) => {
   const mode = req.query.mode === "overall" ? "overall" : "current";
 
   try {
+    const sync = await ensureYearSync(year, { force: false });
     const data =
       mode === "current"
-        ? await getCurrentOverview(year)
-        : await getAllSemesterOverview(year);
+        ? await getCurrentOverview(year, sync)
+        : await getAllSemesterOverview(year, sync);
 
     res.json(data);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -332,6 +331,7 @@ router.get("/top-students", async (req, res) => {
     const rows = await getTopStudents(year, mode);
     res.json(rows);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -351,6 +351,33 @@ router.get("/department/:dept", async (req, res) => {
     const details = await getDepartmentDetails(year, departmentId, mode);
     res.json(details);
   } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/sync", async (req, res) => {
+  const year = requireYear(req, res);
+  if (!year) return;
+
+  try {
+    const sync = await ensureYearSync(year, { force: true });
+    res.json(sync);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/sync-status", async (req, res) => {
+  const year = requireYear(req, res);
+  if (!year) return;
+
+  try {
+    const sync = await getYearSyncStatus(year);
+    res.json(sync);
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
