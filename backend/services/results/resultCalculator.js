@@ -14,7 +14,22 @@ const isFailGrade = (grade) => {
   return normalized === "F" || normalized === "AB";
 };
 
+const hasActiveFailSubject = (subjects) =>
+  Array.isArray(subjects) &&
+  subjects.some((subject) => {
+    const normalizedStatus = String(subject?.status || "").trim().toLowerCase();
+    if (normalizedStatus === "active_backlog") {
+      return true;
+    }
+
+    return isFailGrade(subject?.grade);
+  });
+
 const calculateSGPA = (subjects) => {
+  if (hasActiveFailSubject(subjects)) {
+    return "Fail";
+  }
+
   let totalCredits = 0;
   let weightedSum = 0;
 
@@ -31,6 +46,14 @@ const calculateSGPA = (subjects) => {
   }
 
   return (weightedSum / totalCredits).toFixed(2);
+};
+
+const toStoredSgpaValue = (sgpa) => {
+  if (String(sgpa || "").trim().toUpperCase() === "FAIL") {
+    return 0;
+  }
+
+  return Number.parseFloat(sgpa) || 0;
 };
 
 const buildSummary = (semesters) => {
@@ -73,6 +96,8 @@ const buildSummary = (semesters) => {
 module.exports = {
   gradeMap,
   isFailGrade,
+  hasActiveFailSubject,
   calculateSGPA,
+  toStoredSgpaValue,
   buildSummary
 };

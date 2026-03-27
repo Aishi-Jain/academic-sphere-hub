@@ -2,7 +2,7 @@ const db = require("../../config/db");
 const { getExamCodeCatalog, SEMESTERS } = require("./examCodeCatalog");
 const { fetchSemesterAttempts } = require("./resultFetcher");
 const { mergeSemesterAttempts } = require("./resultMerger");
-const { buildSummary } = require("./resultCalculator");
+const { buildSummary, calculateSGPA, toStoredSgpaValue } = require("./resultCalculator");
 
 const branchMap = {
   "05": "CSE",
@@ -80,6 +80,7 @@ const persistSemesters = async (roll, semesters, fetchedAt = new Date()) => {
     );
 
     let resultId;
+    const storedSgpa = toStoredSgpaValue(semester.sgpa);
 
     if (existing.length > 0) {
       resultId = existing[0].id;
@@ -87,21 +88,21 @@ const persistSemesters = async (roll, semesters, fetchedAt = new Date()) => {
       if (includeLastFetched) {
         await db.promise().query(
           "UPDATE results SET sgpa = ?, last_fetched = ? WHERE id = ?",
-          [semester.sgpa, fetchedAt, resultId]
+          [storedSgpa, fetchedAt, resultId]
         );
       } else {
-        await db.promise().query("UPDATE results SET sgpa = ? WHERE id = ?", [semester.sgpa, resultId]);
+        await db.promise().query("UPDATE results SET sgpa = ? WHERE id = ?", [storedSgpa, resultId]);
       }
     } else if (includeLastFetched) {
       const [inserted] = await db.promise().query(
         "INSERT INTO results (roll_number, semester, sgpa, last_fetched) VALUES (?, ?, ?, ?)",
-        [roll, semester.semester, semester.sgpa, fetchedAt]
+        [roll, semester.semester, storedSgpa, fetchedAt]
       );
       resultId = inserted.insertId;
     } else {
       const [inserted] = await db.promise().query(
         "INSERT INTO results (roll_number, semester, sgpa) VALUES (?, ?, ?)",
-        [roll, semester.semester, semester.sgpa]
+        [roll, semester.semester, storedSgpa]
       );
       resultId = inserted.insertId;
     }

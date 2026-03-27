@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { extractExamCode, resolveSemester, getExamCodeCatalog } = require("../services/results/examCodeCatalog");
 const { mergeSemesterAttempts } = require("../services/results/resultMerger");
-const { calculateSGPA, buildSummary } = require("../services/results/resultCalculator");
+const { calculateSGPA, buildSummary, toStoredSgpaValue } = require("../services/results/resultCalculator");
 const { normalizeGrade, cleanNumber } = require("../services/results/resultFetcher");
 
 test("extractExamCode reads numeric exam code from href", () => {
@@ -187,6 +187,16 @@ test("calculateSGPA and buildSummary keep CGPA valid until active backlogs remai
   ]);
 
   assert.equal(failSummary.cgpa, "Fail");
+});
+
+test("calculateSGPA returns Fail for active F/AB subjects and storage value becomes zero", () => {
+  const sgpa = calculateSGPA([
+    { credits: "0", grade: "F", status: "active_backlog" },
+    { credits: "4", grade: "A", status: "pass" }
+  ]);
+
+  assert.equal(sgpa, "Fail");
+  assert.equal(toStoredSgpaValue(sgpa), 0);
 });
 
 test("buildSummary ignores lateral-entry skipped semesters", () => {
