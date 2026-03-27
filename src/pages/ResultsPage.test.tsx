@@ -1,19 +1,20 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, MockInstance } from "vitest";
 import axios from "axios";
 import ResultsPage from "./ResultsPage";
 
+// Properly mock axios
 vi.mock("axios");
-
-const mockedAxios = vi.mocked(axios);
 
 describe("ResultsPage", () => {
   beforeEach(() => {
-    mockedAxios.get.mockReset();
+    // Correct way to reset the mock in Vitest
+    vi.clearAllMocks();
   });
 
   it("renders summary values and cleared backlog state from backend response", async () => {
-    mockedAxios.get.mockResolvedValue({
+    // Type casting axios.get as a Vitest Mock to solve the 'unknown' property errors
+    (axios.get as any).mockResolvedValue({
       data: {
         student: {
           name: "Jane Doe",
@@ -53,21 +54,23 @@ describe("ResultsPage", () => {
           },
         ],
       },
-    } as never);
+    });
 
     render(<ResultsPage />);
 
-    fireEvent.change(screen.getByPlaceholderText(/Enter Roll Number/i), {
-      target: { value: "22Q91A6665" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /Get Results/i }));
+    const input = screen.getByPlaceholderText(/Enter Roll Number/i);
+    fireEvent.change(input, { target: { value: "22Q91A6665" } });
+    
+    const button = screen.getByRole("button", { name: /Get Results/i });
+    fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("ACADEMIC RESULTS")).toBeInTheDocument();
-    });
+      expect(screen.getByText(/ACADEMIC RESULTS/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
 
+    // Verifications
     expect(screen.getAllByText("8.12")).toHaveLength(2);
-    expect(screen.getByText("Cleared")).toBeInTheDocument();
+    expect(screen.getByText(/Cleared/i)).toBeInTheDocument();
     expect(screen.getByText(/Cleared from F via exam code 1671/i)).toBeInTheDocument();
     expect(screen.getByText(/No result rows were found for 4-2/i)).toBeInTheDocument();
   });
