@@ -332,6 +332,7 @@ const AnalyticsPage = () => {
   const isBlockedByAnotherYear = Boolean(
     syncStatus?.activeSyncYear && syncStatus.activeSyncYear !== selectedYear && syncStatus.canStart === false
   );
+  const syncDisplayTotal = syncStatus?.targetedStudents ?? syncStatus?.totalStudents ?? 0;
 
   return (
     <div className="space-y-6">
@@ -377,7 +378,7 @@ const AnalyticsPage = () => {
             <div>
               <p className="text-sm font-medium text-white">
                 {isSyncRunning
-                  ? `Syncing Q9 Results: ${syncStatus?.completedStudents ?? 0}/${syncStatus?.totalStudents ?? 0} complete`
+                  ? `Syncing Q9 Results: ${syncStatus?.completedStudents ?? 0}/${syncDisplayTotal} complete`
                   : isBlockedByAnotherYear
                     ? `Year ${syncStatus?.activeSyncYear} is syncing right now`
                   : syncStatus?.status === "failed"

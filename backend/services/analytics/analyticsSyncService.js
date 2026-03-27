@@ -107,6 +107,7 @@ const buildStatusResponse = (job) => ({
   semester: job.semester,
   status: job.status,
   totalStudents: job.totalStudents,
+  targetedStudents: job.targetedStudents,
   completedStudents: job.completedStudents,
   queuedStudents: job.queuedStudents,
   successfulStudents: job.successfulStudents,
@@ -231,6 +232,7 @@ const ensureYearSync = async (year, options = {}) => {
       semester: getYearSemester(year),
       status: "idle",
       totalStudents: 0,
+      targetedStudents: 0,
       completedStudents: 0,
       queuedStudents: 0,
       successfulStudents: 0,
@@ -254,7 +256,7 @@ const ensureYearSync = async (year, options = {}) => {
   }
 
   const freshness = await getFreshnessForYear(year);
-  const rollNumbers = force ? (await getTargetStudents(year, freshness.semester)).map((row) => row.roll_number) : freshness.staleRollNumbers;
+  const rollNumbers = freshness.staleRollNumbers;
 
   if (rollNumbers.length === 0) {
     const completedJob = {
@@ -263,6 +265,7 @@ const ensureYearSync = async (year, options = {}) => {
       semester: freshness.semester,
       status: "completed",
       totalStudents: freshness.totalStudents,
+      targetedStudents: 0,
       completedStudents: freshness.totalStudents,
       queuedStudents: 0,
       successfulStudents: 0,
@@ -283,8 +286,9 @@ const ensureYearSync = async (year, options = {}) => {
     year,
     semester: freshness.semester,
     status: "running",
-    totalStudents: freshness.totalStudents,
-    completedStudents: force ? 0 : freshness.freshStudents,
+    totalStudents: rollNumbers.length,
+    targetedStudents: rollNumbers.length,
+    completedStudents: 0,
     queuedStudents: rollNumbers.length,
     successfulStudents: 0,
     failedStudents: 0,
@@ -315,6 +319,7 @@ const getYearSyncStatus = async (year) => {
       semester: getYearSemester(year),
       status: "idle",
       totalStudents: 0,
+      targetedStudents: 0,
       completedStudents: 0,
       queuedStudents: 0,
       successfulStudents: 0,
@@ -337,6 +342,7 @@ const getYearSyncStatus = async (year) => {
     semester: freshness.semester,
     status: freshness.required ? "idle" : "completed",
     totalStudents: freshness.totalStudents,
+    targetedStudents: freshness.staleRollNumbers.length,
     completedStudents: freshness.freshStudents,
     queuedStudents: freshness.staleRollNumbers.length,
     successfulStudents: 0,

@@ -140,6 +140,7 @@ export interface AnalyticsSyncStatus {
   semester: string;
   status: "idle" | "running" | "completed" | "failed";
   totalStudents: number;
+  targetedStudents?: number;
   completedStudents: number;
   queuedStudents: number;
   successfulStudents: number;
