@@ -16,14 +16,14 @@ export function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
       animate={{ opacity: 1, y: 0 }}
       className="stat-card"
     >
-      <div className="relative z-10 flex items-start justify-between gap-4">
-        <div className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+      <div className="relative z-10 flex min-h-[132px] items-start justify-between gap-4">
+        <div className="flex min-h-full flex-1 flex-col justify-between gap-4">
+          <p className="max-w-[12ch] text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
+          <p className="text-4xl font-bold leading-none text-foreground">{value}</p>
           {trend && <p className="text-xs font-medium text-success">{trend}</p>}
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-3 text-primary shadow-[0_0_28px_var(--glow-cyan)]">
-          <Icon className="h-5 w-5" />
+        <div className="mt-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] border border-white/10 bg-white/[0.07] text-primary shadow-[0_0_24px_var(--glow-cyan)]">
+          <Icon className="h-[22px] w-[22px]" strokeWidth={1.9} />
         </div>
       </div>
     </motion.div>

@@ -147,14 +147,14 @@ const ClassroomsPage = () => {
               Maintain room inventory, block allocation, and exam-ready capacity from one streamlined classroom registry.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="glass-panel p-4">
+          <div className="grid gap-3 sm:grid-cols-2 self-start">
+            <div className="glass-panel flex min-h-[116px] flex-col justify-between p-5">
               <p className="text-sm text-muted-foreground">Rooms</p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">{classrooms.length}</p>
+              <p className="text-4xl font-semibold leading-none text-foreground">{classrooms.length}</p>
             </div>
-            <div className="glass-panel p-4">
+            <div className="glass-panel flex min-h-[116px] flex-col justify-between p-5">
               <p className="text-sm text-muted-foreground">Total Capacity</p>
-              <p className="mt-2 text-2xl font-semibold text-cyan-200">{totalCapacity}</p>
+              <p className="text-4xl font-semibold leading-none text-cyan-200">{totalCapacity}</p>
             </div>
           </div>
         </div>

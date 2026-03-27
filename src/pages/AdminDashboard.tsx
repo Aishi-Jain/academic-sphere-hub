@@ -112,8 +112,8 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-8 2xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard title="Total Students" value={dashboardData.totalStudents} icon={Users} />
           <StatCard title="Total Faculty" value={dashboardData.totalFaculty} icon={GraduationCap} />
           <StatCard title="Departments" value={dashboardData.departments} icon={Building2} />
@@ -123,22 +123,27 @@ const AdminDashboard = () => {
           <StatCard title="Pass %" value={`${dashboardData.passPercentage}%`} icon={CheckCircle} />
         </div>
 
-        <div className="data-card relative flex justify-center">
+        <div className="data-card relative flex min-h-[360px] items-center justify-center lg:min-h-[420px]">
           <label className="absolute right-4 top-4 cursor-pointer rounded-full border border-white/10 bg-white/[0.04] p-2 text-primary">
             <Camera size={16} />
             <input type="file" className="hidden" onChange={handleImageUpload} />
           </label>
 
-          <div className="space-y-4 text-center">
-            <img
-              src={profilePic || "/default-avatar.png"}
-              className="mx-auto h-24 w-24 rounded-full border-2 border-primary/50 object-cover shadow-[0_0_36px_var(--glow-violet)]"
-            />
+          <div className="flex min-h-full w-full flex-col items-center justify-center gap-6 py-6 text-center">
+            <div className="relative h-36 w-36 lg:h-40 lg:w-40">
+              <div className="pointer-events-none absolute inset-[-12px] rounded-full bg-[radial-gradient(circle,var(--glow-cyan),transparent_62%)] opacity-90 blur-xl" />
+              <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_210deg_at_50%_50%,rgba(124,58,237,0.95),rgba(22,217,255,0.9),rgba(124,58,237,0.95))] p-[3px] shadow-[0_0_40px_var(--glow-violet)]">
+                <img
+                  src={profilePic || "/default-avatar.png"}
+                  className="h-full w-full rounded-full border border-white/15 object-cover bg-background"
+                />
+              </div>
+            </div>
             <div>
-              <h3 className="text-xl font-semibold text-foreground">Admin</h3>
-              <p className="text-sm text-muted-foreground">Role: Admin</p>
-              <p className="text-sm text-muted-foreground">Malla Reddy College of Engineering</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.24em] text-success">Active</p>
+              <h3 className="text-2xl font-semibold text-foreground">Admin</h3>
+              <p className="mt-2 text-base text-muted-foreground">Role: Admin</p>
+              <p className="mt-1 text-base text-muted-foreground">Malla Reddy College of Engineering</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.3em] text-success">Active</p>
             </div>
           </div>
         </div>

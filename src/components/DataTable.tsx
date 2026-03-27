@@ -100,13 +100,13 @@ export function DataTable<T extends Record<string, any>>({
 
       <div className="data-card overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[760px] text-[13px] md:text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.03]">
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:px-5"
                   >
                     {column.header}
                   </th>
@@ -117,7 +117,7 @@ export function DataTable<T extends Record<string, any>>({
               {paged.map((item, index) => (
                 <tr key={index} className="border-b border-white/6 transition hover:bg-white/[0.03] last:border-0">
                   {columns.map((column) => (
-                    <td key={column.key} className="px-5 py-4 align-middle text-foreground">
+                    <td key={column.key} className="px-4 py-3 align-middle text-foreground md:px-5">
                       {column.render ? column.render(item) : String(item[column.key] ?? "")}
                     </td>
                   ))}

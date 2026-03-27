@@ -203,18 +203,18 @@ const SeatingPage = () => {
             </p>
           </div>
 
-          <div className="glass-panel space-y-3">
+          <div className="glass-panel self-start">
             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
               Quick Snapshot
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Exam Records</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{exams.length}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{exams.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Generated Rooms</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{allocations.length}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{allocations.length}</p>
               </div>
             </div>
           </div>

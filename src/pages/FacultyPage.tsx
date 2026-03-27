@@ -226,16 +226,16 @@ const FacultyPage = () => {
               Manage teaching staff, HOD roles, department mapping, and faculty onboarding with a cleaner registry workspace.
             </p>
           </div>
-          <div className="glass-panel space-y-3">
+          <div className="glass-panel self-start">
             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Quick Snapshot</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Faculty Count</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{faculty.length}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{faculty.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Departments</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{departments.length}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{departments.length}</p>
               </div>
             </div>
           </div>

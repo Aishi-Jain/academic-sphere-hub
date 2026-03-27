@@ -516,16 +516,16 @@ const InvigilationPage = () => {
               Manage timetable publishing, HOD quota distribution, faculty slot booking, and final room assignment generation.
             </p>
           </div>
-          <div className="glass-panel space-y-3">
+          <div className="glass-panel self-start">
             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current Context</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Year</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{selectedYear}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{selectedYear}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex min-h-[116px] flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-sm text-muted-foreground">Semester</p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{selectedSemester}</p>
+                <p className="text-4xl font-semibold leading-none text-foreground">{selectedSemester}</p>
               </div>
             </div>
           </div>

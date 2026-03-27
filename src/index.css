@@ -174,7 +174,7 @@
     background:
       linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.03)),
       linear-gradient(135deg, color-mix(in srgb, var(--accent-violet) 10%, transparent), transparent 40%);
-    @apply rounded-[28px] border border-white/10 backdrop-blur-2xl shadow-2xl;
+    @apply rounded-[28px] border border-white/10 backdrop-blur-2xl shadow-2xl px-5 py-5 md:px-6 md:py-6;
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.08),
       0 16px 60px rgba(0, 0, 0, 0.28);
@@ -233,7 +233,7 @@
   }
 
   .page-description {
-    @apply text-sm md:text-base;
+    @apply text-sm leading-7 md:text-base;
     color: var(--text-muted);
   }
 

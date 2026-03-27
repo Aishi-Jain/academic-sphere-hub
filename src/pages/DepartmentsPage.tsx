@@ -29,18 +29,18 @@ const DepartmentsPage = () => {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="glass-panel p-4">
+          <div className="grid gap-3 sm:grid-cols-3 self-start">
+            <div className="glass-panel flex min-h-[116px] flex-col justify-between p-5">
               <p className="text-sm text-muted-foreground">Departments</p>
-              <p className="mt-2 text-2xl font-semibold text-foreground">{departments.length}</p>
+              <p className="text-4xl font-semibold leading-none text-foreground">{departments.length}</p>
             </div>
-            <div className="glass-panel p-4">
+            <div className="glass-panel flex min-h-[116px] flex-col justify-between p-5">
               <p className="text-sm text-muted-foreground">Students</p>
-              <p className="mt-2 text-2xl font-semibold text-cyan-200">{totalStudents}</p>
+              <p className="text-4xl font-semibold leading-none text-cyan-200">{totalStudents}</p>
             </div>
-            <div className="glass-panel p-4">
+            <div className="glass-panel flex min-h-[116px] flex-col justify-between p-5">
               <p className="text-sm text-muted-foreground">Faculty</p>
-              <p className="mt-2 text-2xl font-semibold text-violet-200">{totalFaculty}</p>
+              <p className="text-4xl font-semibold leading-none text-violet-200">{totalFaculty}</p>
             </div>
           </div>
         </div>

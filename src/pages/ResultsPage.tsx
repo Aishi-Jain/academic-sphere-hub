@@ -306,84 +306,90 @@ const ResultsPage = () => {
       <section className="hero-surface overflow-hidden">
         <div className="absolute -right-20 top-0 h-56 w-56 rounded-full bg-[hsl(var(--accent-cyan))/0.16] blur-3xl" />
         <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-[hsl(var(--accent-violet))/0.16] blur-3xl" />
-        <div className="hero-layout-wide relative">
+        <div className="relative space-y-4">
           <div className="space-y-4">
             <p className="section-kicker">Result Intelligence</p>
-            <h1 className="page-header max-w-2xl">
+            <h1 className="page-header max-w-4xl">
               Track semester performance, merged backlog history, and live result retrieval in one place.
             </h1>
-            <p className="page-description max-w-2xl">
+            <p className="page-description max-w-3xl">
               Enter a roll number to generate a polished semester-by-semester academic report with SGPA, CGPA, cleared backlog tracking, and exam-code-aware merging.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="glass-panel space-y-4">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-[hsl(var(--accent-cyan))]" />
-              Fast, backlog-aware, and student friendly
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Input
-                value={roll}
-                onChange={(event) => setRoll(event.target.value)}
-                placeholder="Enter Roll Number (e.g., 22Q91A6665)"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void fetchResults();
-                }}
-              />
-              <Button onClick={fetchResults} disabled={loading} className="gap-2">
-                <Search className="h-4 w-4" />
-                {loading ? "Fetching..." : "Get Results"}
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Real-time result retrieval with merged backlog context and semester summaries.
+      <section className="data-card">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="section-kicker">Search Panel</p>
+            <h2 className="section-header mt-1">Find Results By Roll Number</h2>
+            <p className="text-sm text-muted-foreground">
+              Fast, backlog-aware, and student friendly.
             </p>
+          </div>
 
-            {loading ? (
-              <div className="rounded-2xl border border-[hsl(var(--accent-cyan))/0.16] bg-[hsl(var(--bg-surface))]/80 p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
-                    Pulling Results
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Step {loadingPhaseIndex + 1} / {loadingPhases.length}
-                  </p>
-                </div>
-                <p className="text-lg font-semibold text-foreground">
-                  {loadingPhases[loadingPhaseIndex]}
-                </p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {loadingPhases.map((phase, index) => {
-                    const state =
-                      index < loadingPhaseIndex
-                        ? "done"
-                        : index === loadingPhaseIndex
-                          ? "active"
-                          : "pending";
-
-                    return (
-                      <div
-                        key={phase}
-                        className={`rounded-xl border px-3 py-2 text-sm ${
-                          state === "done"
-                            ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
-                            : state === "active"
-                              ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
-                              : "border-white/10 bg-white/[0.03] text-muted-foreground"
-                        }`}
-                      >
-                        {phase}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
+          <div className="flex w-full flex-col gap-3 lg:max-w-[560px]">
+            <Input
+              value={roll}
+              onChange={(event) => setRoll(event.target.value)}
+              placeholder="Enter Roll Number (e.g., 22Q91A6665)"
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void fetchResults();
+              }}
+            />
+            <Button onClick={fetchResults} disabled={loading} className="gap-2 lg:self-end lg:px-8">
+              <Search className="h-4 w-4" />
+              {loading ? "Fetching..." : "Get Results"}
+            </Button>
           </div>
         </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          Real-time result retrieval with merged backlog context and semester summaries.
+        </p>
+
+        {loading ? (
+          <div className="mt-5 rounded-2xl border border-[hsl(var(--accent-cyan))/0.16] bg-[hsl(var(--bg-surface))]/80 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                <Sparkles className="h-4 w-4" />
+                Pulling Results
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Step {loadingPhaseIndex + 1} / {loadingPhases.length}
+              </p>
+            </div>
+            <p className="text-lg font-semibold text-foreground">
+              {loadingPhases[loadingPhaseIndex]}
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {loadingPhases.map((phase, index) => {
+                const state =
+                  index < loadingPhaseIndex
+                    ? "done"
+                    : index === loadingPhaseIndex
+                      ? "active"
+                      : "pending";
+
+                return (
+                  <div
+                    key={phase}
+                    className={`rounded-xl border px-3 py-2 text-sm ${
+                      state === "done"
+                        ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
+                        : state === "active"
+                          ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                          : "border-white/10 bg-white/[0.03] text-muted-foreground"
+                    }`}
+                  >
+                    {phase}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {data ? (

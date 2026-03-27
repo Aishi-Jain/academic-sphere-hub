@@ -31,7 +31,7 @@ const allItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const role = user?.role;
@@ -41,10 +41,10 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="floating"
-      className="border-r-0 p-3"
+      className="border-r-0 p-2 md:p-3"
     >
-      <SidebarContent className="rounded-[28px] border border-white/10 bg-sidebar/90 px-3 py-4 shadow-2xl backdrop-blur-2xl">
-        <div className="mb-4 flex items-center gap-3 px-2 py-3">
+      <SidebarContent className="rounded-[28px] border border-white/10 bg-sidebar/90 px-2 py-3 shadow-2xl backdrop-blur-2xl md:px-3 md:py-4">
+        <div className="mb-4 flex items-center gap-3 px-2 py-2.5">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-2 shadow-lg">
             <img
               src={logo}
@@ -65,18 +65,21 @@ export function AppSidebar() {
             {!collapsed && "Platform"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1.5">
+            <SidebarMenu className="gap-1">
               {items.map((item) => (
                 <SidebarMenuItem key={`${item.title}-${item.url}`}>
-                  <SidebarMenuButton asChild tooltip={item.title} className="h-11 rounded-2xl px-3">
+                  <SidebarMenuButton asChild tooltip={item.title} className="h-10 rounded-2xl px-3">
                     <NavLink
                       to={item.url}
                       end={item.url === "/home"}
+                      onClick={() => {
+                        if (isMobile) setOpenMobile(false);
+                      }}
                       className="flex items-center gap-3 text-sidebar-foreground/75"
                       activeClassName="bg-gradient-to-r from-primary/25 to-accent/15 text-sidebar-foreground shadow-[0_0_0_1px_var(--border-soft),0_0_28px_var(--glow-violet)]"
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span className="truncate">{item.title}</span>}
+                      <item.icon className="h-[17px] w-[17px] shrink-0" strokeWidth={1.9} />
+                      {!collapsed && <span className="truncate text-[13px] font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
