@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,37 +7,43 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { RoleProvider } from "@/lib/role-context";
-import  AppLayout from "@/components/AppLayout";
 
-import LoginPage from "./pages/LoginPage";
-import HomePage from "./pages/HomePage";
-import AdminDashboard from "./pages/AdminDashboard";
-import FacultyDashboard from "./pages/FacultyDashboard";
-import StudentDashboard from "./pages/StudentDashboard";
-//import DashboardPage from "./pages/DashboardPage";
-import StudentsPage from "./pages/StudentsPage";
-import FacultyPage from "./pages/FacultyPage";
-import DepartmentsPage from "./pages/DepartmentsPage";
-import SubjectsPage from "./pages/SubjectsPage";
-import ClassroomsPage from "./pages/ClassroomsPage";
-import ExamsPage from "./pages/ExamsPage";
-import SeatingPage from "./pages/SeatingPage";
-import InvigilationPage from "./pages/InvigilationPage";
-import ResultsPage from "./pages/ResultsPage";
-import MarksPage from "./pages/MarksPage";
-import StudentMarksPage from "./pages/StudentMarksPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import CircularsPage from "./pages/CircularsPage";
-//import NotificationsPage from "./pages/NotificationsPage";
-//import SettingsPage from "./pages/SettingsPage";
-import NotFound from "./pages/NotFound";
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const Index = lazy(() => import("./pages/Index"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const FacultyDashboard = lazy(() => import("./pages/FacultyDashboard"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const StudentsPage = lazy(() => import("./pages/StudentsPage"));
+const FacultyPage = lazy(() => import("./pages/FacultyPage"));
+const DepartmentsPage = lazy(() => import("./pages/DepartmentsPage"));
+const SubjectsPage = lazy(() => import("./pages/SubjectsPage"));
+const ClassroomsPage = lazy(() => import("./pages/ClassroomsPage"));
+const ExamsPage = lazy(() => import("./pages/ExamsPage"));
+const SeatingPage = lazy(() => import("./pages/SeatingPage"));
+const InvigilationPage = lazy(() => import("./pages/InvigilationPage"));
+const ResultsPage = lazy(() => import("./pages/ResultsPage"));
+const MarksPage = lazy(() => import("./pages/MarksPage"));
+const StudentMarksPage = lazy(() => import("./pages/StudentMarksPage"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const CircularsPage = lazy(() => import("./pages/CircularsPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
+const RouteFallback = () => (
+  <div className="app-shell flex min-h-screen items-center justify-center px-6">
+    <div className="glass-panel w-full max-w-md text-center">
+      <p className="section-kicker mx-auto">Loading</p>
+      <h2 className="page-header mt-4">Preparing your workspace</h2>
+      <p className="page-description mt-3">
+        Loading the next screen with route-based code splitting for a faster experience.
+      </p>
+    </div>
+  </div>
+);
+
 function App() {
-
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -44,36 +51,40 @@ function App() {
         <Sonner />
         <RoleProvider>
           <BrowserRouter>
-            <Routes>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<LoginPage />} />
 
-              {/* LOGIN */}
-              <Route path="/login" element={<LoginPage />} />
+                <Route
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "faculty", "student"]}>
+                      <AppLayoutWrapper />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/home" element={<HomePage />} />
+                  <Route path="/AdminDashboard" element={<AdminDashboard />} />
+                  <Route path="/FacultyDashboard" element={<FacultyDashboard />} />
+                  <Route path="/StudentDashboard" element={<StudentDashboard />} />
+                  <Route path="/students" element={<StudentsPage />} />
+                  <Route path="/faculty" element={<FacultyPage />} />
+                  <Route path="/departments" element={<DepartmentsPage />} />
+                  <Route path="/subjects" element={<SubjectsPage />} />
+                  <Route path="/classrooms" element={<ClassroomsPage />} />
+                  <Route path="/exams" element={<ExamsPage />} />
+                  <Route path="/seating" element={<SeatingPage />} />
+                  <Route path="/invigilation" element={<InvigilationPage />} />
+                  <Route path="/results" element={<ResultsPage />} />
+                  <Route path="/marks" element={<MarksPage />} />
+                  <Route path="/student/marks" element={<StudentMarksPage />} />
+                  <Route path="/analytics" element={<AnalyticsPage />} />
+                  <Route path="/circulars" element={<CircularsPage />} />
+                </Route>
 
-              {/* PAGES WITH LAYOUT */}
-              <Route path="/" element={<AppLayoutWrapper />}>
-                
-                <Route index element={<HomePage />} />
-                <Route path="AdminDashboard" element={<AdminDashboard />} />
-                <Route path="FacultyDashboard" element={<FacultyDashboard />} />
-                <Route path="StudentDashboard" element={<StudentDashboard />} />
-                <Route path="students" element={<StudentsPage />} />
-                <Route path="faculty" element={<FacultyPage />} />
-                <Route path="departments" element={<DepartmentsPage />} />
-                <Route path="subjects" element={<SubjectsPage />} />
-                <Route path="classrooms" element={<ClassroomsPage />} />
-                <Route path="exams" element={<ExamsPage />} />
-                <Route path="seating" element={<SeatingPage />} />
-                <Route path="invigilation" element={<InvigilationPage />} />
-                <Route path="results" element={<ResultsPage />} />
-                <Route path="marks" element={<MarksPage />} />
-                <Route path="/student/marks" element={<StudentMarksPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="circulars" element={<CircularsPage />} />
-                {/*<Route path="settings" element={<SettingsPage />} />*/}
-
-              </Route>
-
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </RoleProvider>
       </TooltipProvider>

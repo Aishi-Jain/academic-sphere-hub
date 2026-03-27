@@ -233,10 +233,13 @@ const StudentsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <section className="hero-surface">
+        <p className="section-kicker">Student Registry</p>
         <h1 className="page-header">Students</h1>
-        <p className="page-description">Manage student records across all departments</p>
-      </div>
+        <p className="page-description max-w-2xl">
+          Manage student records, department mapping, regulation details, and semester metadata from one workspace.
+        </p>
+      </section>
 
       <DataTable
         data={students}

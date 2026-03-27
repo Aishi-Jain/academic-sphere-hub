@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Camera, Pencil } from "lucide-react";
+import { Camera, Pencil, Medal, ChartNoAxesCombined, School, Sparkles } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -9,47 +9,35 @@ import {
   CategoryScale,
   Tooltip,
   Filler,
-  Legend
+  Legend,
 } from "chart.js";
+import { StatCard } from "@/components/StatCard";
+import { useChartTheme } from "@/lib/useChartTheme";
 
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Filler,
-  Legend
-);
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler, Legend);
 
 const StudentDashboard = () => {
-
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [profilePic, setProfilePic] = useState<string | null>(null);
-
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const chartTheme = useChartTheme();
 
-  // 🔥 FETCH DATA (ALSO LOAD PROFILE PIC FROM DB)
   useEffect(() => {
     if (!user?.username) return;
 
     fetch(`http://localhost:5000/api/student-dashboard?roll=${user.username}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setDashboardData(data);
-
-        // 🔥 CRITICAL FIX → load profile pic on refresh
         if (data?.studentInfo?.profile_pic) {
           setProfilePic(`http://localhost:5000${data.studentInfo.profile_pic}`);
         } else {
           setProfilePic(null);
         }
       })
-      .catch(err => console.error(err));
-
+      .catch((err) => console.error(err));
   }, [user]);
 
-  // 🔥 IMAGE UPLOAD
   const handleImageUpload = async (e: any) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -57,200 +45,134 @@ const StudentDashboard = () => {
     const formData = new FormData();
     formData.append("image", file);
     formData.append("role", "student");
-
-    // 🔥 FIX: backend expects userId NOT id
     formData.append("userId", user.username);
 
-    try {
-      const res = await fetch("http://localhost:5000/api/upload-profile", {
-        method: "POST",
-        body: formData
-      });
+    const res = await fetch("http://localhost:5000/api/upload-profile", {
+      method: "POST",
+      body: formData,
+    });
 
-      const data = await res.json();
-
-      if (data.imageUrl) {
-        const fullUrl = `http://localhost:5000${data.imageUrl}`;
-
-        // update UI instantly
-        setProfilePic(fullUrl);
-
-        // update dashboard state
-        setDashboardData((prev: any) => ({
-          ...prev,
-          studentInfo: {
-            ...prev.studentInfo,
-            profile_pic: data.imageUrl
-          }
-        }));
-      }
-
-    } catch (err) {
-      console.error(err);
+    const data = await res.json();
+    if (data.imageUrl) {
+      const fullUrl = `http://localhost:5000${data.imageUrl}`;
+      setProfilePic(fullUrl);
+      setDashboardData((prev: any) => ({
+        ...prev,
+        studentInfo: {
+          ...prev.studentInfo,
+          profile_pic: data.imageUrl,
+        },
+      }));
     }
   };
 
-  // 🔥 CHART DATA
+  if (!dashboardData || !dashboardData.studentInfo) {
+    return <div className="data-card">Loading dashboard...</div>;
+  }
+
   const chartData = {
     labels: dashboardData?.trend?.map((item: any) => item.semester) || [],
     datasets: [
       {
         label: "SGPA",
         data: dashboardData?.trend?.map((item: any) => Number(item.sgpa)) || [],
-
-        borderColor: "#8b5cf6",
-
-        backgroundColor: (context: any) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-          gradient.addColorStop(0, "rgba(139, 92, 246, 0.4)");
-          gradient.addColorStop(1, "rgba(139, 92, 246, 0)");
-          return gradient;
-        },
-
+        borderColor: chartTheme.cyan,
+        backgroundColor: `${chartTheme.cyan}22`,
         fill: true,
-        tension: 0.4,
-
+        tension: 0.42,
         pointRadius: 5,
         pointHoverRadius: 7,
-        pointBackgroundColor: "#8b5cf6",
+        pointBackgroundColor: chartTheme.violet,
         pointBorderWidth: 2,
-        pointBorderColor: "#111",
-
-        borderWidth: 3
-      }
-    ]
+        pointBorderColor: chartTheme.surface,
+        borderWidth: 3,
+      },
+    ],
   };
 
-  // 🔥 CHART OPTIONS
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: "#111",
-        borderColor: "#333",
+        backgroundColor: chartTheme.surface,
+        borderColor: chartTheme.grid,
         borderWidth: 1,
-        titleColor: "#fff",
-        bodyColor: "#ccc"
-      }
+        titleColor: chartTheme.text,
+        bodyColor: chartTheme.muted,
+      },
     },
-
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "#aaa" }
+        ticks: { color: chartTheme.muted },
       },
       y: {
         min: 6,
         max: 10,
-        grid: {
-          color: "#2a2a2a",
-          borderDash: [4, 4]
-        },
-        ticks: { color: "#aaa" }
-      }
-    }
+        grid: { color: chartTheme.grid },
+        ticks: { color: chartTheme.muted },
+      },
+    },
   };
 
-  // 🔥 SAFE LOADING
-  if (!dashboardData || !dashboardData.studentInfo) {
-    return <div className="p-10 text-white">Loading dashboard...</div>;
-  }
-
   return (
-    <div className="p-6 text-white space-y-6">
-
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold">Student Dashboard</h1>
-        <p className="text-gray-400">Your academic performance overview</p>
-      </div>
-
-      {/* 👤 PROFILE */}
-      <div className="flex justify-center relative">
-
-        {/* EDIT ICON */}
-        <label className="absolute left-4 top-4 bg-purple-600 p-2 rounded-full cursor-pointer hover:scale-105 transition">
-          <Pencil size={16} />
-          <input type="file" className="hidden" onChange={handleImageUpload} />
-        </label>
-
-        {/* CAMERA ICON */}
-        <label className="absolute right-4 top-4 bg-purple-600 p-2 rounded-full cursor-pointer hover:scale-105 transition">
-          <Camera size={16} />
-          <input type="file" className="hidden" onChange={handleImageUpload} />
-        </label>
-
-        <div className="bg-[#1e1e1e] border border-gray-700 rounded-xl p-6 w-[320px] text-center space-y-4">
-
-          <img
-            src={profilePic || "/default-avatar.png"}
-            className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-purple-500"
-          />
-
-          <div>
-            <h3 className="text-lg font-semibold">
-              {dashboardData.studentInfo.name}
-            </h3>
-
-            <p className="text-sm text-gray-400">
-              Roll No: {dashboardData.studentInfo.roll_number}
-            </p>
-
-            <p className="text-sm text-gray-400">
-              {dashboardData.studentInfo.department_name} {dashboardData.studentInfo.section}
-            </p>
-
-            <p className="text-sm text-gray-400">
-              Year: {dashboardData.studentInfo.year}
-            </p>
-
-            <p className="text-sm text-gray-400">
-              Malla Reddy College of Engineering
-            </p>
-
-            <p className="text-xs text-green-500 mt-1">Active</p>
-          </div>
-
+    <div className="space-y-8">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <span className="section-kicker mb-3">Student Overview</span>
+          <h1 className="page-header">Student Dashboard</h1>
+          <p className="page-description">Your performance, ranks, and academic progress in one refined view.</p>
         </div>
       </div>
 
-      {/* 📊 STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard title="Current CGPA" value={dashboardData.cgpa} />
-        <StatCard title="Semester SGPA" value={dashboardData.latestSGPA} />
-        <StatCard title="Section Rank" value={dashboardData.sectionRank} />
-        <StatCard title="Dept Rank" value={dashboardData.deptRank} />
-        <StatCard title="College Rank" value={dashboardData.collegeRank} />
+      <div className="grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="data-card relative flex justify-center">
+          <label className="absolute left-4 top-4 cursor-pointer rounded-full border border-white/10 bg-white/[0.04] p-2 text-primary">
+            <Pencil size={16} />
+            <input type="file" className="hidden" onChange={handleImageUpload} />
+          </label>
+          <label className="absolute right-4 top-4 cursor-pointer rounded-full border border-white/10 bg-white/[0.04] p-2 text-primary">
+            <Camera size={16} />
+            <input type="file" className="hidden" onChange={handleImageUpload} />
+          </label>
+
+          <div className="space-y-4 text-center">
+            <img
+              src={profilePic || "/default-avatar.png"}
+              className="mx-auto h-24 w-24 rounded-full border-2 border-primary/50 object-cover shadow-[0_0_36px_var(--glow-violet)]"
+            />
+            <div>
+              <h3 className="text-xl font-semibold text-foreground">{dashboardData.studentInfo.name}</h3>
+              <p className="text-sm text-muted-foreground">Roll No: {dashboardData.studentInfo.roll_number}</p>
+              <p className="text-sm text-muted-foreground">
+                {dashboardData.studentInfo.department_name} {dashboardData.studentInfo.section}
+              </p>
+              <p className="text-sm text-muted-foreground">Year: {dashboardData.studentInfo.year}</p>
+              <p className="text-sm text-muted-foreground">Malla Reddy College of Engineering</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <StatCard title="Current CGPA" value={dashboardData.cgpa} icon={Sparkles} />
+          <StatCard title="Semester SGPA" value={dashboardData.latestSGPA} icon={ChartNoAxesCombined} />
+          <StatCard title="Section Rank" value={dashboardData.sectionRank} icon={Medal} />
+          <StatCard title="Dept Rank" value={dashboardData.deptRank} icon={School} />
+          <StatCard title="College Rank" value={dashboardData.collegeRank} icon={Medal} />
+        </div>
       </div>
 
-      {/* 📈 CHART */}
-      <div className="bg-[#1e1e1e] border border-gray-700 rounded-xl p-6">
-
-        <h3 className="text-lg font-semibold mb-2">CGPA Growth</h3>
-        <p className="text-sm text-gray-400 mb-4">
-          Your academic performance across semesters
-        </p>
-
-        <div className="w-full h-[320px]">
+      <div className="chart-panel">
+        <h3 className="mb-2 text-lg font-semibold text-foreground">CGPA Growth</h3>
+        <p className="mb-4 text-sm text-muted-foreground">Your academic performance across semesters.</p>
+        <div className="h-[320px]">
           <Line data={chartData} options={chartOptions} />
         </div>
-
       </div>
-
     </div>
   );
 };
 
 export default StudentDashboard;
-
-// 🔥 STAT CARD
-const StatCard = ({ title, value }: any) => (
-  <div className="bg-[#1e1e1e] border border-gray-700 rounded-xl p-4">
-    <p className="text-sm text-gray-400">{title}</p>
-    <h2 className="text-xl font-bold mt-1">{value}</h2>
-  </div>
-);

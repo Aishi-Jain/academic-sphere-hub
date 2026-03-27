@@ -1,40 +1,34 @@
-import { deptShortNames, departments } from "@/lib/mock-data";
-import { useRole } from "@/lib/role-context";
-import { Button } from "@/components/ui/button";
-import { Plus, Megaphone, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "axios";
-
+import { motion } from "framer-motion";
+import { deptShortNames, departments } from "@/lib/mock-data";
+import { useRole } from "@/lib/role-context";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Megaphone, Paperclip, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
-
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 
 const CircularsPage = () => {
   const { role } = useRole();
-
-  // ✅ cleaner flag
   const canManageCirculars = role === "admin" || role === "faculty";
 
   const [circulars, setCirculars] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
@@ -50,7 +44,7 @@ const CircularsPage = () => {
   };
 
   useEffect(() => {
-    fetchCirculars();
+    void fetchCirculars();
   }, []);
 
   const addCircular = async () => {
@@ -67,9 +61,7 @@ const CircularsPage = () => {
       if (file) formData.append("file", file);
 
       await axios.post("http://localhost:5000/api/circulars", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       setOpen(false);
@@ -77,7 +69,6 @@ const CircularsPage = () => {
       setDescription("");
       setDepartment("");
       setFile(null);
-
       fetchCirculars();
     } catch (err) {
       console.error("Error adding circular", err);
@@ -95,170 +86,177 @@ const CircularsPage = () => {
 
   const getDeptShortName = (deptId: any) => {
     if (deptId === "global") return "Global";
-    const dept = departments.find(
-      (d) => String(d.id) === String(deptId)
-    );
+    const dept = departments.find((department) => String(department.id) === String(deptId));
     return dept ? deptShortNames[dept.name] : deptId;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <section className="hero-surface">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="section-kicker">Announcements</p>
+            <h1 className="page-header">Circulars</h1>
+            <p className="page-description max-w-2xl">
+              Publish, review, and distribute academic notices through a cleaner department-aware announcement hub.
+            </p>
+          </div>
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-header">Circulars</h1>
-          <p className="page-description">Announcements and notices</p>
-        </div>
-
-        {/* ✅ FIXED CONDITION */}
-        {canManageCirculars && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5 text-xs">
-                <Plus className="h-3.5 w-3.5" /> New Circular
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Circular</DialogTitle>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-
-                <div className="grid gap-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Description</Label>
-                  <Input
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Attachment</Label>
-                  <Input
-                    type="file"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Department</Label>
-                  <Select onValueChange={setDepartment}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="global">Global</SelectItem>
-                      {departments.map((d) => (
-                        <SelectItem key={d.id} value={String(d.id)}>
-                          {deptShortNames[d.name]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button onClick={addCircular}>
-                  Add Circular
+          {canManageCirculars && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Circular
                 </Button>
+              </DialogTrigger>
 
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Circular</DialogTitle>
+                </DialogHeader>
 
-      {/* LIST */}
-      <div className="space-y-4">
-        {circulars.map((c, i) => (
-          <motion.div
-            key={c.circular_id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="stat-card"
-          >
-            <div className="flex items-start justify-between gap-4">
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Title</Label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                  </div>
 
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Megaphone className="h-4 w-4 text-primary" />
+                  <div className="grid gap-2">
+                    <Label>Description</Label>
+                    <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Attachment</Label>
+                    <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Department</Label>
+                    <Select onValueChange={setDepartment}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="global">Global</SelectItem>
+                        {departments.map((departmentItem) => (
+                          <SelectItem key={departmentItem.id} value={String(departmentItem.id)}>
+                            {deptShortNames[departmentItem.name]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button onClick={addCircular}>Add Circular</Button>
                 </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </section>
 
-                <div>
-                  <h3 className="font-medium text-sm">{c.title}</h3>
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="metric-tile">
+          <p className="text-sm text-muted-foreground">Total Circulars</p>
+          <p className="mt-3 text-3xl font-semibold text-foreground">{circulars.length}</p>
+        </div>
+        <div className="metric-tile">
+          <p className="text-sm text-muted-foreground">Global Notices</p>
+          <p className="mt-3 text-3xl font-semibold text-cyan-200">
+            {circulars.filter((circular) => circular.department_id === "global").length}
+          </p>
+        </div>
+        <div className="metric-tile">
+          <p className="text-sm text-muted-foreground">Role Access</p>
+          <p className="mt-3 text-3xl font-semibold text-violet-200">
+            {canManageCirculars ? "Publish" : "View"}
+          </p>
+        </div>
+      </section>
 
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {c.description}
-                  </p>
+      <section className="space-y-4">
+        {circulars.length === 0 ? (
+          <div className="data-card text-center text-muted-foreground">
+            No circulars have been published yet.
+          </div>
+        ) : (
+          circulars.map((circular, index) => (
+            <motion.div
+              key={circular.circular_id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="data-card"
+            >
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-1 items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[hsl(var(--accent-cyan))/0.16] bg-[hsl(var(--accent-cyan))/0.12]">
+                    <Megaphone className="h-5 w-5 text-[hsl(var(--accent-cyan))]" />
+                  </div>
 
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(c.date).toLocaleDateString()}
-                  </p>
-
-                  {c.file && (
-                    <div className="mt-3">
-
-                      {/\.(jpg|jpeg|png|gif)$/i.test(c.file) && (
-                        <img
-                          src={`http://localhost:5000/uploads/${c.file}`}
-                          className="rounded-lg max-h-72 w-full border"
-                        />
-                      )}
-
-                      {/\.pdf$/i.test(c.file) && (
-                        <iframe
-                          src={`http://localhost:5000/uploads/${c.file}`}
-                          className="w-full h-72 border rounded-lg"
-                        />
-                      )}
-
-                      {!/\.(jpg|jpeg|png|gif|pdf)$/i.test(c.file) && (
-                        <a
-                          href={`http://localhost:5000/uploads/${c.file}`}
-                          target="_blank"
-                          className="text-primary underline text-sm"
-                        >
-                          📎 View Attachment
-                        </a>
-                      )}
-
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-lg font-semibold text-foreground">{circular.title}</h3>
+                      <Badge>{getDeptShortName(circular.department_id)}</Badge>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <Badge className="text-xs">
-                  {getDeptShortName(c.department_id)}
-                </Badge>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{circular.description}</p>
+                    <p className="mt-3 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      {new Date(circular.date).toLocaleDateString()}
+                    </p>
+
+                    {circular.file ? (
+                      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Paperclip className="h-4 w-4" />
+                          Attachment Preview
+                        </div>
+
+                        {/\.(jpg|jpeg|png|gif)$/i.test(circular.file) && (
+                          <img
+                            src={`http://localhost:5000/uploads/${circular.file}`}
+                            className="max-h-80 w-full rounded-xl border border-border/70 object-cover"
+                          />
+                        )}
+
+                        {/\.pdf$/i.test(circular.file) && (
+                          <iframe
+                            src={`http://localhost:5000/uploads/${circular.file}`}
+                            className="h-80 w-full rounded-xl border border-border/70"
+                          />
+                        )}
+
+                        {!/\.(jpg|jpeg|png|gif|pdf)$/i.test(circular.file) && (
+                          <a
+                            href={`http://localhost:5000/uploads/${circular.file}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-[hsl(var(--accent-cyan))] underline"
+                          >
+                            View Attachment
+                          </a>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
 
                 {canManageCirculars && (
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => deleteCircular(c.circular_id)}
+                    onClick={() => deleteCircular(circular.circular_id)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
+            </motion.div>
+          ))
+        )}
+      </section>
     </div>
   );
 };

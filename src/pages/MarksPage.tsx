@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { departments as staticDepartments, deptShortNames } from "@/lib/mock-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Department = { department_id: number; department_name: string };
 type Subject = {
@@ -68,15 +77,15 @@ const MarksPage = () => {
   const [statusMessage, setStatusMessage] = useState("");
 
   const departmentLabel = useMemo(() => {
-    const fromApi = departments.find((d) => String(d.department_id) === departmentId);
+    const fromApi = departments.find((item) => String(item.department_id) === departmentId);
     if (!fromApi) return "-";
-    const staticMatch = staticDepartments.find((d) => d.id === String(fromApi.department_id));
+    const staticMatch = staticDepartments.find((item) => item.id === String(fromApi.department_id));
     if (!staticMatch) return fromApi.department_name;
     return deptShortNames[staticMatch.name] || fromApi.department_name;
   }, [departments, departmentId]);
 
-  const selectedSubject = subjects.find((s) => String(s.subject_id) === subjectId);
-  const yearLabel = yearOptions.find((y) => y.value === year)?.label || "-";
+  const selectedSubject = subjects.find((subject) => String(subject.subject_id) === subjectId);
+  const yearLabel = yearOptions.find((item) => item.value === year)?.label || "-";
 
   const resetStudentsAndMarks = () => {
     setStudents([]);
@@ -104,11 +113,7 @@ const MarksPage = () => {
 
   useEffect(() => {
     resetStudentsAndMarks();
-  }, [section]);
-
-  useEffect(() => {
-    resetStudentsAndMarks();
-  }, [subjectId]);
+  }, [section, subjectId]);
 
   useEffect(() => {
     if (!regulation || !year || !departmentId) return;
@@ -150,11 +155,11 @@ const MarksPage = () => {
     setStudents(res.data);
 
     const initialMarks: Record<number, RowMark> = {};
-    res.data.forEach((s: Student) => {
-      initialMarks[s.student_id] = {
-        mid1: s.mid1 === null || s.mid1 === undefined ? "" : String(s.mid1),
-        mid2: s.mid2 === null || s.mid2 === undefined ? "" : String(s.mid2),
-        ppt: s.ppt === null || s.ppt === undefined ? "" : String(s.ppt),
+    res.data.forEach((student: Student) => {
+      initialMarks[student.student_id] = {
+        mid1: student.mid1 === null || student.mid1 === undefined ? "" : String(student.mid1),
+        mid2: student.mid2 === null || student.mid2 === undefined ? "" : String(student.mid2),
+        ppt: student.ppt === null || student.ppt === undefined ? "" : String(student.ppt),
       };
     });
 
@@ -177,11 +182,11 @@ const MarksPage = () => {
   });
 
   const handleSubmit = async () => {
-    const marksData = students.map((s) => ({
-      student_id: s.student_id,
-      mid1: marks[s.student_id]?.mid1 ?? "",
-      mid2: marks[s.student_id]?.mid2 ?? "",
-      ppt: marks[s.student_id]?.ppt ?? "",
+    const marksData = students.map((student) => ({
+      student_id: student.student_id,
+      mid1: marks[student.student_id]?.mid1 ?? "",
+      mid2: marks[student.student_id]?.mid2 ?? "",
+      ppt: marks[student.student_id]?.ppt ?? "",
     }));
 
     const res = await axios.post("http://localhost:5000/api/marks/upload", {
@@ -199,9 +204,9 @@ const MarksPage = () => {
 
   const handleSavePdf = () => {
     const rowsHtml = students
-      .map((s) => {
-        const row = marks[s.student_id] || { mid1: "", mid2: "", ppt: "" };
-        return `<tr><td>${s.roll_no}</td><td>${s.name}</td><td>${row.mid1 || "-"}</td><td>${row.mid2 || "-"}</td><td>${row.ppt || "-"}</td><td>${computeTotal(row.mid1, row.mid2, row.ppt)}</td></tr>`;
+      .map((student) => {
+        const row = marks[student.student_id] || { mid1: "", mid2: "", ppt: "" };
+        return `<tr><td>${student.roll_no}</td><td>${student.name}</td><td>${row.mid1 || "-"}</td><td>${row.mid2 || "-"}</td><td>${row.ppt || "-"}</td><td>${computeTotal(row.mid1, row.mid2, row.ppt)}</td></tr>`;
       })
       .join("");
 
@@ -236,143 +241,211 @@ const MarksPage = () => {
   const readyToLoad = regulation && year && semester && departmentId && section && subjectId;
 
   return (
-    <div className="p-6 text-white space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Marks Entry</h1>
-        <p className="text-gray-400">Regulation, year, semester, department, section and subject based marks workflow.</p>
-      </div>
+    <div className="space-y-8">
+      <section className="hero-surface">
+        <div className="hero-layout">
+          <div>
+            <p className="section-kicker">Assessment Workspace</p>
+            <h1 className="page-header">Marks Entry</h1>
+            <p className="page-description max-w-2xl">
+              Select regulation, year, section, and subject to build a cleaner marks-entry workflow for faculty and department coordinators.
+            </p>
+          </div>
+          <div className="glass-panel space-y-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Selection Summary</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm text-muted-foreground">Department</p>
+                <p className="mt-2 text-xl font-semibold text-foreground">{departmentLabel}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm text-muted-foreground">Subject</p>
+                <p className="mt-2 text-xl font-semibold text-foreground">{selectedSubject?.subject_code || "-"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-        <select className="bg-gray-800 p-3 rounded" value={regulation} onChange={(e) => setRegulation(e.target.value)}>
-          <option value="">Regulation</option>
-          {regulations.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
+      <section className="data-card">
+        <div className="mb-5">
+          <p className="section-kicker">Filters</p>
+          <h2 className="section-header mt-1">Marks Setup</h2>
+        </div>
 
-        <select className="bg-gray-800 p-3 rounded" value={year} onChange={(e) => setYear(e.target.value)}>
-          <option value="">Year</option>
-          {yearOptions.map((item) => (
-            <option key={item.value} value={item.value}>{item.label}</option>
-          ))}
-        </select>
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <Select value={regulation} onValueChange={setRegulation}>
+            <SelectTrigger>
+              <SelectValue placeholder="Regulation" />
+            </SelectTrigger>
+            <SelectContent>
+              {regulations.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <select className="bg-gray-800 p-3 rounded" value={semester} onChange={(e) => setSemester(e.target.value)}>
-          <option value="">Semester</option>
-          {semesterOptions.map((item) => (
-            <option key={item.value} value={item.value}>{item.label}</option>
-          ))}
-        </select>
+          <Select value={year} onValueChange={setYear}>
+            <SelectTrigger>
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <select className="bg-gray-800 p-3 rounded" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-          <option value="">Department</option>
-          {departments.map((d) => {
-            const staticMatch = staticDepartments.find((s) => s.id === String(d.department_id));
-            const label = staticMatch ? deptShortNames[staticMatch.name] : d.department_name;
-            return <option key={d.department_id} value={d.department_id}>{label}</option>;
-          })}
-        </select>
+          <Select value={semester} onValueChange={setSemester}>
+            <SelectTrigger>
+              <SelectValue placeholder="Semester" />
+            </SelectTrigger>
+            <SelectContent>
+              {semesterOptions.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <select className="bg-gray-800 p-3 rounded" value={section} onChange={(e) => setSection(e.target.value)}>
-          <option value="">Section</option>
-          {sections.map((s) => (
-            <option key={s.section} value={s.section}>{s.section}</option>
-          ))}
-        </select>
+          <Select value={departmentId} onValueChange={setDepartmentId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((department) => {
+                const staticMatch = staticDepartments.find((item) => item.id === String(department.department_id));
+                const label = staticMatch ? deptShortNames[staticMatch.name] : department.department_name;
+                return (
+                  <SelectItem key={department.department_id} value={String(department.department_id)}>
+                    {label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
 
-        <select className="bg-gray-800 p-3 rounded" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
-          <option value="">Subject</option>
-          {subjects.map((s) => (
-            <option key={s.subject_id} value={s.subject_id}>{s.subject_name}</option>
-          ))}
-        </select>
+          <Select value={section} onValueChange={setSection}>
+            <SelectTrigger>
+              <SelectValue placeholder="Section" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map((item) => (
+                <SelectItem key={item.section} value={item.section}>
+                  {item.section}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <input className="bg-gray-900 p-3 rounded text-gray-300" value={selectedSubject?.subject_code || ""} placeholder="Subject Code" readOnly />
+          <Select value={subjectId} onValueChange={setSubjectId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map((subject) => (
+                <SelectItem key={subject.subject_id} value={String(subject.subject_id)}>
+                  {subject.subject_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <button
-          onClick={handleLoadStudents}
-          disabled={!readyToLoad}
-          className="bg-blue-600 px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Load Student List
-        </button>
-      </div>
+          <Input value={selectedSubject?.subject_code || ""} placeholder="Subject Code" readOnly />
+
+          <Button onClick={handleLoadStudents} disabled={!readyToLoad}>
+            Load Student List
+          </Button>
+        </div>
+      </section>
 
       {students.length > 0 && (
-        <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
-          <div className="px-4 py-3 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-gray-200">
-              Student List: {regulation} • {yearLabel} • {departmentLabel} • {section}
-            </p>
+        <section className="data-card overflow-hidden">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
+            <div>
+              <p className="section-kicker">Entry Sheet</p>
+              <p className="text-sm text-muted-foreground">
+                {regulation} • {yearLabel} • {departmentLabel} • Section {section}
+              </p>
+            </div>
+
             <div className="flex gap-2">
-              <button onClick={handleSavePdf} className="bg-slate-700 px-4 py-2 rounded hover:bg-slate-600">Save Marks</button>
-              <button
-                onClick={handleSubmit}
-                disabled={hasInvalid}
-                className="bg-green-600 px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button variant="outline" onClick={handleSavePdf}>
+                Save Marks
+              </Button>
+              <Button onClick={handleSubmit} disabled={hasInvalid}>
                 Submit
-              </button>
+              </Button>
             </div>
           </div>
 
-          <table className="w-full">
-            <thead className="bg-gray-800 text-gray-300">
-              <tr>
-                <th className="p-3 text-left">Roll No</th>
-                <th className="p-3 text-left">Student Name</th>
-                <th className="p-3 text-left">Mid 1</th>
-                <th className="p-3 text-left">Mid 2</th>
-                <th className="p-3 text-left">PPT</th>
-                <th className="p-3 text-left">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => {
-                const row = marks[student.student_id] || { mid1: "", mid2: "", ppt: "" };
-                const mid1Invalid = !isValidNumber(row.mid1, 35);
-                const mid2Invalid = !isValidNumber(row.mid2, 35);
-                const pptInvalid = !isValidNumber(row.ppt, 5);
-                return (
-                  <tr key={student.student_id} className="border-b border-gray-800 align-top">
-                    <td className="p-3">{student.roll_no}</td>
-                    <td className="p-3">{student.name}</td>
-                    <td className="p-3">
-                      <input
-                        type="number"
-                        className={`p-2 rounded w-24 ${mid1Invalid ? "bg-red-950 border border-red-500" : "bg-gray-800"}`}
-                        value={row.mid1}
-                        onChange={(e) => handleChange(student.student_id, "mid1", e.target.value)}
-                      />
-                      {mid1Invalid && <p className="text-xs text-red-400 mt-1">Mid 1 must be 0..35</p>}
-                    </td>
-                    <td className="p-3">
-                      <input
-                        type="number"
-                        className={`p-2 rounded w-24 ${mid2Invalid ? "bg-red-950 border border-red-500" : "bg-gray-800"}`}
-                        value={row.mid2}
-                        onChange={(e) => handleChange(student.student_id, "mid2", e.target.value)}
-                      />
-                      {mid2Invalid && <p className="text-xs text-red-400 mt-1">Mid 2 must be 0..35</p>}
-                    </td>
-                    <td className="p-3">
-                      <input
-                        type="number"
-                        className={`p-2 rounded w-24 ${pptInvalid ? "bg-red-950 border border-red-500" : "bg-gray-800"}`}
-                        value={row.ppt}
-                        onChange={(e) => handleChange(student.student_id, "ppt", e.target.value)}
-                      />
-                      {pptInvalid && <p className="text-xs text-red-400 mt-1">PPT must be 0..5</p>}
-                    </td>
-                    <td className="p-3">{computeTotal(row.mid1, row.mid2, row.ppt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto rounded-2xl border border-border/70">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="bg-white/[0.04] text-muted-foreground">
+                <tr>
+                  <th className="p-3 text-left">Roll No</th>
+                  <th className="p-3 text-left">Student Name</th>
+                  <th className="p-3 text-left">Mid 1</th>
+                  <th className="p-3 text-left">Mid 2</th>
+                  <th className="p-3 text-left">PPT</th>
+                  <th className="p-3 text-left">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((student) => {
+                  const row = marks[student.student_id] || { mid1: "", mid2: "", ppt: "" };
+                  const mid1Invalid = !isValidNumber(row.mid1, 35);
+                  const mid2Invalid = !isValidNumber(row.mid2, 35);
+                  const pptInvalid = !isValidNumber(row.ppt, 5);
 
-          {statusMessage && <p className="p-4 text-green-400 text-sm">{statusMessage}</p>}
-        </div>
+                  return (
+                    <tr key={student.student_id} className="border-t border-border/60 align-top">
+                      <td className="p-3 font-mono text-xs">{student.roll_no}</td>
+                      <td className="p-3">{student.name}</td>
+                      <td className="p-3">
+                        <Input
+                          type="number"
+                          className={mid1Invalid ? "border-rose-400/40 bg-rose-500/10" : ""}
+                          value={row.mid1}
+                          onChange={(e) => handleChange(student.student_id, "mid1", e.target.value)}
+                        />
+                        {mid1Invalid && <p className="mt-1 text-xs text-rose-300">Mid 1 must be 0..35</p>}
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          type="number"
+                          className={mid2Invalid ? "border-rose-400/40 bg-rose-500/10" : ""}
+                          value={row.mid2}
+                          onChange={(e) => handleChange(student.student_id, "mid2", e.target.value)}
+                        />
+                        {mid2Invalid && <p className="mt-1 text-xs text-rose-300">Mid 2 must be 0..35</p>}
+                      </td>
+                      <td className="p-3">
+                        <Input
+                          type="number"
+                          className={pptInvalid ? "border-rose-400/40 bg-rose-500/10" : ""}
+                          value={row.ppt}
+                          onChange={(e) => handleChange(student.student_id, "ppt", e.target.value)}
+                        />
+                        {pptInvalid && <p className="mt-1 text-xs text-rose-300">PPT must be 0..5</p>}
+                      </td>
+                      <td className="p-3 font-semibold text-cyan-200">
+                        {computeTotal(row.mid1, row.mid2, row.ppt)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {statusMessage && <p className="pt-4 text-sm text-emerald-300">{statusMessage}</p>}
+        </section>
       )}
     </div>
   );

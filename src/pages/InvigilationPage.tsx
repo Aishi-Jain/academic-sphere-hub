@@ -441,13 +441,13 @@ const InvigilationPage = () => {
   };
 
   const renderTimetable = (editable: boolean) => (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border border-border text-sm">
-        <thead>
-          <tr className="bg-muted/40">
-            <th className="border border-border px-3 py-2 text-left">Branch</th>
+    <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <table className="min-w-full text-sm">
+        <thead className="bg-white/[0.04] text-muted-foreground">
+          <tr>
+            <th className="border-b border-r border-border/60 px-3 py-3 text-left">Branch</th>
             {sessionsDraft.map((session) => (
-              <th key={session.client_key} className="border border-border px-3 py-2 text-left min-w-[220px]">
+              <th key={session.client_key} className="border-b border-border/60 px-3 py-3 text-left min-w-[220px]">
                 <div>{renderSessionLabel(session)}</div>
                 <div className="text-xs text-muted-foreground">
                   {session.occupied_room_count ?? 0} rooms / {session.capacity_slots ?? 0} slots
@@ -459,7 +459,7 @@ const InvigilationPage = () => {
         <tbody>
           {timetableDraft.map((row) => (
             <tr key={row.department_id}>
-              <td className="border border-border px-3 py-2 font-medium">{row.department_short_name}</td>
+              <td className="border-r border-t border-border/60 px-3 py-3 font-medium">{row.department_short_name}</td>
               {row.sessions.map((entry) => {
                 const options = subjects.filter(
                   (subject) =>
@@ -468,10 +468,10 @@ const InvigilationPage = () => {
                     Number(subject.department_id) === row.department_id
                 );
                 return (
-                  <td key={`${row.department_id}-${entry.client_session_key}`} className="border border-border px-3 py-2">
+                  <td key={`${row.department_id}-${entry.client_session_key}`} className="border-t border-border/60 px-3 py-3">
                     {editable ? (
                       <select
-                        className="h-10 w-full rounded-md border border-input bg-background px-3"
+                        className="h-11 w-full rounded-xl border border-border/70 bg-white/[0.03] px-3 text-foreground"
                         value={entry.subject_id || ""}
                         onChange={(event) => updateTimetableEntry(row.department_id, entry.client_session_key, Number(event.target.value))}
                       >
@@ -507,10 +507,30 @@ const InvigilationPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-header">Faculty Invigilation</h1>
-        <p className="page-description">Manage timetable publishing, HOD quota distribution, and faculty slot booking.</p>
-      </div>
+      <section className="hero-surface">
+        <div className="hero-layout">
+          <div>
+            <p className="section-kicker">Invigilation Control</p>
+            <h1 className="page-header">Faculty Invigilation</h1>
+            <p className="page-description max-w-2xl">
+              Manage timetable publishing, HOD quota distribution, faculty slot booking, and final room assignment generation.
+            </p>
+          </div>
+          <div className="glass-panel space-y-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current Context</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm text-muted-foreground">Year</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{selectedYear}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-sm text-muted-foreground">Semester</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{selectedSemester}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="flex flex-wrap gap-2">
         {YEAR_OPTIONS.map((year) => (
@@ -520,15 +540,19 @@ const InvigilationPage = () => {
         ))}
       </div>
 
-      {message && <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-sm">{message}</div>}
+      {message && <div className="data-card py-4 text-sm">{message}</div>}
 
       {role === "admin" && (
-        <div className="stat-card space-y-4">
+        <div className="data-card space-y-6">
+          <div>
+            <p className="section-kicker">Admin Workspace</p>
+            <h2 className="section-header mt-1">Cycle Builder</h2>
+          </div>
           <div className="grid gap-4 md:grid-cols-4">
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Semester</label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3"
+                className="h-11 w-full rounded-xl border border-border/70 bg-white/[0.03] px-3 text-foreground"
                 value={selectedSemester}
                 onChange={(event) => setSelectedSemester(Number(event.target.value))}
               >
@@ -539,7 +563,7 @@ const InvigilationPage = () => {
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Cycle</label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3"
+                className="h-11 w-full rounded-xl border border-border/70 bg-white/[0.03] px-3 text-foreground"
                 value={selectedCycleId || ""}
                 onChange={(event) => setSelectedCycleId(event.target.value ? Number(event.target.value) : null)}
               >
@@ -571,7 +595,7 @@ const InvigilationPage = () => {
                 <div key={session.client_key} className="rounded-lg border border-border p-3 space-y-2">
                   <Input type="date" value={session.exam_date} onChange={(event) => updateSession(session.client_key, { exam_date: event.target.value })} />
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3"
+                    className="h-11 w-full rounded-xl border border-border/70 bg-white/[0.03] px-3 text-foreground"
                     value={session.session_type}
                     onChange={(event) => updateSession(session.client_key, { session_type: event.target.value as "FN" | "AN" })}
                   >
@@ -580,7 +604,7 @@ const InvigilationPage = () => {
                     ))}
                   </select>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3"
+                    className="h-11 w-full rounded-xl border border-border/70 bg-white/[0.03] px-3 text-foreground"
                     value={session.source_exam_id || ""}
                     onChange={(event) => updateSession(session.client_key, { source_exam_id: event.target.value ? Number(event.target.value) : null })}
                   >
@@ -611,11 +635,14 @@ const InvigilationPage = () => {
       {cycleDetail && role !== "admin" && renderTimetable(false)}
 
       {cycleDetail?.department_slots?.length ? (
-        <div className="stat-card space-y-3">
-          <h3 className="text-sm font-medium">Department Slot Summary</h3>
+        <div className="data-card space-y-3">
+          <div>
+            <p className="section-kicker">Quota View</p>
+            <h3 className="section-header mt-1">Department Slot Summary</h3>
+          </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {cycleDetail.department_slots.map((slot) => (
-              <div key={slot.department_id} className="rounded-lg border border-border p-3">
+              <div key={slot.department_id} className="rounded-2xl border border-border/70 bg-white/[0.03] p-4">
                 <div className="font-medium">{slot.department_short_name}</div>
                 <div className="text-sm text-muted-foreground">Allocated: {slot.allocated_slots}</div>
                 <div className="text-sm text-muted-foreground">Assigned by HOD: {slot.assigned_slots}</div>
@@ -626,33 +653,34 @@ const InvigilationPage = () => {
       ) : null}
 
       {role === "faculty" && facultyIdentity?.designation === "HOD" && cycleDetail && (
-        <div className="stat-card space-y-4">
+        <div className="data-card space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium">HOD Allocation Desk</h3>
+              <p className="section-kicker">Department Scheduling</p>
+              <h3 className="section-header mt-1">HOD Allocation Desk</h3>
               <p className="text-sm text-muted-foreground">
                 {activeDepartmentSlot?.department_short_name}: {activeDepartmentSlot?.allocated_slots || 0} slots
               </p>
             </div>
             <Button onClick={saveHodAllocations} disabled={loading}>Save Department Allocation</Button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-border text-sm">
-              <thead>
-                <tr className="bg-muted/40">
-                  <th className="border border-border px-3 py-2 text-left">Faculty ID</th>
-                  <th className="border border-border px-3 py-2 text-left">Faculty Name</th>
-                  <th className="border border-border px-3 py-2 text-left">Designation</th>
-                  <th className="border border-border px-3 py-2 text-left">Required Slots</th>
+          <div className="overflow-x-auto rounded-2xl border border-border/70">
+            <table className="min-w-full text-sm">
+              <thead className="bg-white/[0.04] text-muted-foreground">
+                <tr>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Faculty ID</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Faculty Name</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Designation</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Required Slots</th>
                 </tr>
               </thead>
               <tbody>
                 {((cycleDetail as any).faculty_list || []).map((faculty: any) => (
-                  <tr key={faculty.faculty_id}>
-                    <td className="border border-border px-3 py-2">{faculty.faculty_id}</td>
-                    <td className="border border-border px-3 py-2">{faculty.faculty_name}</td>
-                    <td className="border border-border px-3 py-2">{faculty.designation}</td>
-                    <td className="border border-border px-3 py-2">
+                  <tr key={faculty.faculty_id} className="border-t border-border/60">
+                    <td className="px-3 py-3">{faculty.faculty_id}</td>
+                    <td className="px-3 py-3">{faculty.faculty_name}</td>
+                    <td className="px-3 py-3">{faculty.designation}</td>
+                    <td className="px-3 py-3">
                       <Input
                         type="number"
                         min={0}
@@ -675,10 +703,11 @@ const InvigilationPage = () => {
       )}
 
       {role === "faculty" && facultyIdentity && cycleDetail && (
-        <div className="stat-card space-y-4">
+        <div className="data-card space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium">Faculty Slot Booking</h3>
+              <p className="section-kicker">Booking</p>
+              <h3 className="section-header mt-1">Faculty Slot Booking</h3>
               <p className="text-sm text-muted-foreground">
                 Assigned slots: {cycleDetail.faculty_context?.required_slot_count || 0}
               </p>
@@ -692,7 +721,7 @@ const InvigilationPage = () => {
               const checked = selectedSessionIds.includes(session.id);
               const full = session.available_slots === 0 && !checked;
               return (
-                <label key={session.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+                <label key={session.id} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-white/[0.03] p-4">
                   <Checkbox
                     checked={checked}
                     disabled={!canBook || full}
@@ -719,29 +748,32 @@ const InvigilationPage = () => {
       )}
 
       {cycleDetail?.results?.length ? (
-        <div className="stat-card space-y-4">
-          <h3 className="text-sm font-medium">Generated Room Assignments</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-border text-sm">
-              <thead>
-                <tr className="bg-muted/40">
-                  <th className="border border-border px-3 py-2 text-left">Exam Date</th>
-                  <th className="border border-border px-3 py-2 text-left">Session</th>
-                  <th className="border border-border px-3 py-2 text-left">Room</th>
-                  <th className="border border-border px-3 py-2 text-left">Faculty 1</th>
-                  <th className="border border-border px-3 py-2 text-left">Faculty 2</th>
+        <div className="data-card space-y-4">
+          <div>
+            <p className="section-kicker">Output</p>
+            <h3 className="section-header mt-1">Generated Room Assignments</h3>
+          </div>
+          <div className="overflow-x-auto rounded-2xl border border-border/70">
+            <table className="min-w-full text-sm">
+              <thead className="bg-white/[0.04] text-muted-foreground">
+                <tr>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Exam Date</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Session</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Room</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Faculty 1</th>
+                  <th className="border-b border-border/60 px-3 py-3 text-left">Faculty 2</th>
                 </tr>
               </thead>
               <tbody>
                 {cycleDetail.results.map((result) => {
                   const session = cycleDetail.sessions.find((item) => item.id === result.session_id);
                   return (
-                    <tr key={`${result.session_id}-${result.room_id}`}>
-                      <td className="border border-border px-3 py-2">{session?.exam_date}</td>
-                      <td className="border border-border px-3 py-2">{session?.session_type}</td>
-                      <td className="border border-border px-3 py-2">{result.room_number}</td>
-                      <td className="border border-border px-3 py-2">{result.faculty_1.name} ({deptShortNames[result.faculty_1.department_name] || result.faculty_1.department_name})</td>
-                      <td className="border border-border px-3 py-2">{result.faculty_2.name} ({deptShortNames[result.faculty_2.department_name] || result.faculty_2.department_name})</td>
+                    <tr key={`${result.session_id}-${result.room_id}`} className="border-t border-border/60">
+                      <td className="px-3 py-3">{session?.exam_date}</td>
+                      <td className="px-3 py-3">{session?.session_type}</td>
+                      <td className="px-3 py-3">{result.room_number}</td>
+                      <td className="px-3 py-3">{result.faculty_1.name} ({deptShortNames[result.faculty_1.department_name] || result.faculty_1.department_name})</td>
+                      <td className="px-3 py-3">{result.faculty_2.name} ({deptShortNames[result.faculty_2.department_name] || result.faculty_2.department_name})</td>
                     </tr>
                   );
                 })}
@@ -752,7 +784,7 @@ const InvigilationPage = () => {
       ) : null}
 
       {!cycleDetail && !loading && (
-        <div className="rounded-md border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+        <div className="data-card border-dashed py-8 text-center text-sm text-muted-foreground">
           No invigilation cycle is available for the selected year yet.
         </div>
       )}

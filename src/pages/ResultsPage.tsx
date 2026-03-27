@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { Search, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { MergedSubjectResult, ResultResponse, SemesterResult } from "@/lib/types";
 
 const loadingPhases = [
@@ -26,9 +29,7 @@ const normalizeResponse = (payload: any): ResultResponse => {
     const normalizedSubjects: MergedSubjectResult[] = subjects.map((subject: any) => {
       const status =
         subject?.status ||
-        (isActiveBacklogGrade(subject?.grade)
-          ? "active_backlog"
-          : "pass");
+        (isActiveBacklogGrade(subject?.grade) ? "active_backlog" : "pass");
 
       return {
         code: subject?.code || "",
@@ -96,12 +97,11 @@ const normalizeResponse = (payload: any): ResultResponse => {
     semesters: normalizedSemesters,
     summary: {
       cgpa: String(fallbackCgpa),
-      activeBacklogCount:
-        Number(payload?.summary?.activeBacklogCount ?? fallbackActiveBacklogCount),
-      clearedBacklogCount:
-        Number(payload?.summary?.clearedBacklogCount ?? fallbackClearedBacklogCount),
-      semesterCount:
-        Number(payload?.summary?.semesterCount ?? normalizedSemesters.length),
+      activeBacklogCount: Number(payload?.summary?.activeBacklogCount ?? fallbackActiveBacklogCount),
+      clearedBacklogCount: Number(
+        payload?.summary?.clearedBacklogCount ?? fallbackClearedBacklogCount
+      ),
+      semesterCount: Number(payload?.summary?.semesterCount ?? normalizedSemesters.length),
     },
     fetchProgress: payload?.fetchProgress,
     warnings: Array.isArray(payload?.warnings) ? payload.warnings : [],
@@ -154,9 +154,7 @@ const ResultsPage = () => {
   const warningList = data?.warnings ?? [];
 
   const summaryCards = useMemo(() => {
-    if (!data?.summary) {
-      return null;
-    }
+    if (!data?.summary) return null;
 
     return [
       {
@@ -164,55 +162,53 @@ const ResultsPage = () => {
         value: data.summary.cgpa,
         tone:
           data.summary.cgpa === "Fail"
-            ? "bg-red-900/30 border-red-500/20 text-red-400"
-            : "bg-blue-900/30 border-blue-500/20 text-blue-400",
+            ? "text-rose-300 ring-rose-400/20"
+            : "text-[hsl(var(--accent-cyan))] ring-[hsl(var(--accent-cyan))/0.15]",
       },
       {
         label: "Active Backlogs",
         value: String(data.summary.activeBacklogCount),
-        tone: "bg-red-900/30 border-red-500/20 text-red-400",
+        tone: "text-rose-300 ring-rose-400/20",
       },
       {
         label: "Cleared Backlogs",
         value: String(data.summary.clearedBacklogCount),
-        tone: "bg-emerald-900/30 border-emerald-500/20 text-emerald-400",
+        tone: "text-emerald-300 ring-emerald-400/20",
       },
       {
         label: "Semesters Fetched",
         value: String(data.summary.semesterCount),
-        tone: "bg-green-900/30 border-green-500/20 text-green-400",
+        tone: "text-violet-300 ring-violet-400/20",
       },
     ];
   }, [data]);
 
   const gradeColor = (subject: MergedSubjectResult) => {
-    if (subject.status === "cleared_backlog") {
-      return "bg-emerald-500/20 text-emerald-300";
-    }
+    if (subject.status === "cleared_backlog") return "bg-emerald-500/15 text-emerald-200";
 
     switch (subject.grade) {
       case "O":
-        return "bg-green-500/20 text-green-400";
+        return "bg-emerald-500/15 text-emerald-200";
       case "A+":
-        return "bg-blue-500/20 text-blue-400";
+        return "bg-cyan-500/15 text-cyan-200";
       case "A":
-        return "bg-cyan-500/20 text-cyan-400";
+        return "bg-sky-500/15 text-sky-200";
       case "B+":
-        return "bg-purple-500/20 text-purple-400";
+        return "bg-violet-500/15 text-violet-200";
       case "B":
-        return "bg-yellow-500/20 text-yellow-400";
+        return "bg-amber-500/15 text-amber-200";
       case "F":
       case "AB":
-        return "bg-red-500/20 text-red-400";
+        return "bg-rose-500/15 text-rose-200";
       default:
-        return "bg-gray-500/20 text-gray-400";
+        return "bg-white/10 text-foreground";
     }
   };
 
   const statusBadge = (subject: MergedSubjectResult) => {
     if (subject.status === "cleared_backlog") {
       return (
-        <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">
+        <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
           Cleared
         </span>
       );
@@ -220,149 +216,146 @@ const ResultsPage = () => {
 
     if (subject.status === "active_backlog") {
       return (
-        <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-300">
+        <span className="rounded-full border border-rose-400/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-200">
           Active Backlog
         </span>
       );
     }
 
     return (
-      <span className="rounded-full bg-slate-500/15 px-3 py-1 text-xs font-semibold text-slate-300">
+      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted-foreground">
         Passed
       </span>
     );
   };
 
   const renderSemester = (semester: SemesterResult) => (
-    <div
-      key={semester.semester}
-      className="mb-8 rounded-xl border border-gray-700 bg-gray-900/50 p-6 shadow-lg backdrop-blur"
-    >
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <section key={semester.semester} className="data-card space-y-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-blue-400">
-            Semester {semester.semester}
-          </h3>
-          <p className="text-sm text-gray-400">
+          <p className="section-kicker">Semester Overview</p>
+          <h3 className="section-header mt-1">Semester {semester.semester}</h3>
+          <p className="text-sm text-muted-foreground">
             {semester.regulation} • {semester.attemptsFetched} attempt
             {semester.attemptsFetched === 1 ? "" : "s"} merged
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
-          <span>
-            SGPA:{" "}
-            {semester.hasActiveBacklog ? (
-              <span className="font-semibold text-red-400">Fail</span>
-            ) : (
-              <span className="font-semibold text-blue-300">{semester.sgpa}</span>
-            )}
-          </span>
-          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-200">
+        <div className="flex flex-wrap gap-3 text-sm">
+          <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-muted-foreground">
+            SGPA{" "}
+            <span className={semester.hasActiveBacklog ? "text-rose-300" : "text-cyan-200"}>
+              {semester.hasActiveBacklog ? "Fail" : semester.sgpa}
+            </span>
+          </div>
+          <div className="rounded-full border border-[hsl(var(--accent-cyan))/0.16] bg-[hsl(var(--accent-cyan))/0.08] px-4 py-2 text-cyan-100">
             Codes: {semester.examCodesTried.join(", ")}
-          </span>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-400">
-              <th className="py-2 text-left">Code</th>
-              <th className="text-left">Subject</th>
-              <th>Status</th>
-              <th>Int</th>
-              <th>Ext</th>
-              <th>Total</th>
-              <th>Grade</th>
-              <th>Credits</th>
+      <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <table className="min-w-full text-sm">
+          <thead className="bg-white/[0.04] text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 text-left">Code</th>
+              <th className="px-4 py-3 text-left">Subject</th>
+              <th className="px-4 py-3 text-center">Status</th>
+              <th className="px-4 py-3 text-center">Int</th>
+              <th className="px-4 py-3 text-center">Ext</th>
+              <th className="px-4 py-3 text-center">Total</th>
+              <th className="px-4 py-3 text-center">Grade</th>
+              <th className="px-4 py-3 text-center">Credits</th>
             </tr>
           </thead>
           <tbody>
             {semester.subjects.map((subject) => (
               <tr
                 key={`${semester.semester}-${subject.code}`}
-                className="border-b border-gray-800 transition hover:bg-gray-800/40"
+                className="border-t border-border/60 transition-colors hover:bg-white/[0.03]"
               >
-                <td className="py-2">{subject.code}</td>
-                <td>
-                  <div className="font-medium text-white">{subject.name}</div>
+                <td className="px-4 py-3 font-mono text-xs">{subject.code}</td>
+                <td className="px-4 py-3">
+                  <div className="font-medium text-foreground">{subject.name}</div>
                   {subject.status === "cleared_backlog" && subject.clearedFromGrade ? (
-                    <div className="text-xs text-emerald-300">
+                    <div className="text-xs text-emerald-200/90">
                       Cleared from {subject.clearedFromGrade} via exam code {subject.latestExamCode}
                     </div>
                   ) : null}
                 </td>
-                <td className="text-center">{statusBadge(subject)}</td>
-                <td className="text-center">{subject.internal}</td>
-                <td className="text-center">{subject.external}</td>
-                <td className="text-center font-semibold">{subject.total}</td>
-                <td className="text-center">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${gradeColor(subject)}`}
-                  >
+                <td className="px-4 py-3 text-center">{statusBadge(subject)}</td>
+                <td className="px-4 py-3 text-center">{subject.internal}</td>
+                <td className="px-4 py-3 text-center">{subject.external}</td>
+                <td className="px-4 py-3 text-center font-semibold">{subject.total}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${gradeColor(subject)}`}>
                     {subject.grade}
                   </span>
                 </td>
-                <td className="text-center">{subject.credits}</td>
+                <td className="px-4 py-3 text-center">{subject.credits}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-start bg-black px-4 pt-24 text-white">
-      {!data && (
-        <div className="w-full max-w-3xl text-center">
-          <h1 className="mb-4 bg-gradient-to-r from-blue-400 to-cyan-300 text-5xl font-extrabold text-blue-400">
-            RESULTS
-          </h1>
+    <div className="space-y-8">
+      <section className="hero-surface overflow-hidden">
+        <div className="absolute -right-20 top-0 h-56 w-56 rounded-full bg-[hsl(var(--accent-cyan))/0.16] blur-3xl" />
+        <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-[hsl(var(--accent-violet))/0.16] blur-3xl" />
+        <div className="hero-layout-wide relative">
+          <div className="space-y-4">
+            <p className="section-kicker">Result Intelligence</p>
+            <h1 className="page-header max-w-2xl">
+              Track semester performance, merged backlog history, and live result retrieval in one place.
+            </h1>
+            <p className="page-description max-w-2xl">
+              Enter a roll number to generate a polished semester-by-semester academic report with SGPA, CGPA, cleared backlog tracking, and exam-code-aware merging.
+            </p>
+          </div>
 
-          <p className="mb-10 text-lg text-gray-400">
-            Discover your academic performance across semesters.
-            Enter your roll number to view merged results, cleared backlogs, SGPA, and CGPA.
-          </p>
+          <div className="glass-panel space-y-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Sparkles className="h-4 w-4 text-[hsl(var(--accent-cyan))]" />
+              Fast, backlog-aware, and student friendly
+            </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
-            <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
-              <input
+            <div className="flex flex-col gap-3">
+              <Input
                 value={roll}
                 onChange={(event) => setRoll(event.target.value)}
                 placeholder="Enter Roll Number (e.g., 22Q91A6665)"
-                className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-blue-500 md:w-96"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void fetchResults();
+                }}
               />
-
-              <button
-                onClick={fetchResults}
-                className="transform rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 shadow-lg transition hover:scale-105"
-              >
+              <Button onClick={fetchResults} disabled={loading} className="gap-2">
+                <Search className="h-4 w-4" />
                 {loading ? "Fetching..." : "Get Results"}
-              </button>
+              </Button>
             </div>
 
-            <p className="mt-4 text-sm text-gray-500">
-              Fast, real-time, backlog-aware results powered by Academic Sphere
+            <p className="text-xs text-muted-foreground">
+              Real-time result retrieval with merged backlog context and semester summaries.
             </p>
 
             {loading ? (
-              <div className="mt-6 rounded-2xl border border-cyan-500/20 bg-slate-950/60 p-5 text-left">
+              <div className="rounded-2xl border border-[hsl(var(--accent-cyan))/0.16] bg-[hsl(var(--bg-surface))]/80 p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
                     Pulling Results
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Step {loadingPhaseIndex + 1} / {loadingPhases.length}
                   </p>
                 </div>
-
-                <p className="text-lg font-semibold text-white">
+                <p className="text-lg font-semibold text-foreground">
                   {loadingPhases[loadingPhaseIndex]}
                 </p>
-
-                <div className="mt-4 grid gap-2 md:grid-cols-3">
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {loadingPhases.map((phase, index) => {
                     const state =
                       index < loadingPhaseIndex
@@ -376,10 +369,10 @@ const ResultsPage = () => {
                         key={phase}
                         className={`rounded-xl border px-3 py-2 text-sm ${
                           state === "done"
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                            ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-200"
                             : state === "active"
-                              ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-200"
-                              : "border-slate-700 bg-slate-900/70 text-slate-400"
+                              ? "border-cyan-400/20 bg-cyan-500/10 text-cyan-100"
+                              : "border-white/10 bg-white/[0.03] text-muted-foreground"
                         }`}
                       >
                         {phase}
@@ -391,58 +384,60 @@ const ResultsPage = () => {
             ) : null}
           </div>
         </div>
-      )}
+      </section>
 
       {data ? (
-        <div className="mt-10 w-full max-w-6xl">
-          <div className="mb-8 rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-900/40 to-blue-700/20 p-6 shadow-lg">
-            <h1 className="mb-2 text-3xl font-bold text-blue-400">ACADEMIC RESULTS</h1>
-            <p className="mb-4 text-gray-400">Semester-wise merged performance overview</p>
-
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="space-y-6">
+          <section className="data-card">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-sm text-gray-400">Student Name</p>
-                <p className="font-semibold">{data.student.name}</p>
+                <p className="section-kicker">Student Snapshot</p>
+                <h2 className="section-header mt-1">Academic Results</h2>
+                <p className="text-sm text-muted-foreground">
+                  Semester-wise merged performance overview
+                </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-400">Roll Number</p>
-                <p className="font-semibold">{roll.trim().toUpperCase()}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Branch</p>
-                <p className="font-semibold">{data.student.branch}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">College</p>
-                <p className="font-semibold">{data.student.college}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Regulation</p>
-                <p className="font-semibold">{data.student.regulation}</p>
-              </div>
+              <Button variant="outline" onClick={() => window.print()}>
+                Print Report
+              </Button>
             </div>
-          </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              {[
+                ["Student Name", data.student.name],
+                ["Roll Number", roll.trim().toUpperCase()],
+                ["Branch", data.student.branch],
+                ["College", data.student.college],
+                ["Regulation", data.student.regulation],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+                  <p className="mt-2 font-semibold text-foreground">{value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {summaryCards ? (
-            <div className="mb-10 grid gap-6 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {summaryCards.map((card) => (
                 <div
                   key={card.label}
-                  className={`rounded-xl border p-6 shadow-lg ${card.tone}`}
+                  className={`metric-tile ring-1 ${card.tone}`}
                 >
-                  <p className="text-gray-300">{card.label}</p>
-                  <h2 className="text-3xl font-bold">{card.value}</h2>
+                  <p className="text-sm text-muted-foreground">{card.label}</p>
+                  <h2 className="mt-3 text-3xl font-semibold">{card.value}</h2>
                 </div>
               ))}
             </div>
           ) : null}
 
           {warningList.length > 0 ? (
-            <div className="mb-8 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-[0.14em] text-amber-300">
+            <div className="data-card border-amber-400/20 bg-amber-500/10">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-amber-200">
                 Fetch Warnings
               </h2>
-              <ul className="space-y-1 text-sm text-amber-100">
+              <ul className="mt-3 space-y-1 text-sm text-amber-50/90">
                 {warningList.map((warning) => (
                   <li key={warning}>{warning}</li>
                 ))}
@@ -451,7 +446,7 @@ const ResultsPage = () => {
           ) : null}
 
           {data.semesters.length === 0 ? (
-            <div className="rounded-xl border border-gray-700 bg-gray-900/50 p-6 text-gray-300">
+            <div className="data-card text-muted-foreground">
               {data.message || "No results found."}
             </div>
           ) : (

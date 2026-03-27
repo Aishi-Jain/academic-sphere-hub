@@ -10,6 +10,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ExamRow = {
   id: number;
@@ -155,12 +157,13 @@ const ExamsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <section className="hero-surface">
+        <p className="section-kicker">Exam Calendar</p>
         <h1 className="page-header">Exams</h1>
-        <p className="page-description">
-          Manage examination schedules
+        <p className="page-description max-w-2xl">
+          Manage examination schedules, academic year grouping, and semester timelines through a more polished planning surface.
         </p>
-      </div>
+      </section>
 
       <DataTable
         data={exams}
@@ -190,38 +193,70 @@ const ExamsPage = () => {
               </DialogHeader>
 
               <div className="grid gap-4 py-4">
-                <Input
-                  placeholder="Exam Name"
-                  value={form.name}
-                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                />
+                <div className="grid gap-2">
+                  <Label>Exam Name</Label>
+                  <Input
+                    placeholder="Exam Name"
+                    value={form.name}
+                    onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  />
+                </div>
 
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3"
-                  value={form.semester}
-                  onChange={(event) => setForm((current) => ({ ...current, semester: event.target.value }))}
-                >
-                  <option value="1">Semester 1</option>
-                  <option value="2">Semester 2</option>
-                </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Semester</Label>
+                    <Select
+                      value={form.semester}
+                      onValueChange={(value) => setForm((current) => ({ ...current, semester: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Semester 1</SelectItem>
+                        <SelectItem value="2">Semester 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <Input
-                  placeholder="Year (1-4)"
-                  value={form.year}
-                  onChange={(event) => setForm((current) => ({ ...current, year: event.target.value }))}
-                />
+                  <div className="grid gap-2">
+                    <Label>Year</Label>
+                    <Select
+                      value={form.year}
+                      onValueChange={(value) => setForm((current) => ({ ...current, year: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Year 1</SelectItem>
+                        <SelectItem value="2">Year 2</SelectItem>
+                        <SelectItem value="3">Year 3</SelectItem>
+                        <SelectItem value="4">Year 4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-                <Input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Start Date</Label>
+                    <Input
+                      type="date"
+                      value={form.startDate}
+                      onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))}
+                    />
+                  </div>
 
-                <Input
-                  type="date"
-                  value={form.endDate}
-                  onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
-                />
+                  <div className="grid gap-2">
+                    <Label>End Date</Label>
+                    <Input
+                      type="date"
+                      value={form.endDate}
+                      onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
+                    />
+                  </div>
+                </div>
 
                 <Button onClick={saveExam}>
                   {editingId ? "Update Exam" : "Create Exam"}

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // --- MISSING DEFINITIONS ADDED HERE ---
 type SubjectRow = {
@@ -226,10 +227,13 @@ const SubjectsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
+      <section className="hero-surface">
+        <p className="section-kicker">Academic Catalog</p>
         <h1 className="page-header">Subjects</h1>
-        <p className="page-description">Manage academic subjects</p>
-      </div>
+        <p className="page-description max-w-2xl">
+          Maintain subject codes, regulations, semester mapping, and department-specific offerings through a refined catalog interface.
+        </p>
+      </section>
 
       <DataTable
         data={subjects}
@@ -288,64 +292,79 @@ const SubjectsPage = () => {
 
                   <div className="grid gap-2">
                     <Label>Department</Label>
-                    <select
+                    <Select
                       value={form.department}
-                      onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
-                      className="rounded-md border border-input bg-background h-10 px-3"
+                      onValueChange={(value) => setForm((p) => ({ ...p, department: value }))}
                     >
-                      <option value="">Select Department</option>
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {deptShortNames[d.name]}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {deptShortNames[d.name]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
                     <div className="grid gap-2">
                       <Label>Regulation</Label>
-                      <select
+                      <Select
                         value={form.regulation}
-                        onChange={(e) => setForm((p) => ({ ...p, regulation: e.target.value }))}
-                        className="rounded-md border border-input bg-background h-10 px-3"
+                        onValueChange={(value) => setForm((p) => ({ ...p, regulation: value }))}
                       >
-                        {regulationOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select regulation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {regulationOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="grid gap-2">
                       <Label>Year</Label>
-                      <select
+                      <Select
                         value={form.year}
-                        onChange={(e) => setForm((p) => ({ ...p, year: e.target.value }))}
-                        className="rounded-md border border-input bg-background h-10 px-3"
+                        onValueChange={(value) => setForm((p) => ({ ...p, year: value }))}
                       >
-                        {yearOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {yearLabelMap[option]}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {yearOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {yearLabelMap[option]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="grid gap-2">
                       <Label>Semester</Label>
-                      <select
+                      <Select
                         value={form.semester}
-                        onChange={(e) => setForm((p) => ({ ...p, semester: e.target.value }))}
-                        className="rounded-md border border-input bg-background h-10 px-3"
+                        onValueChange={(value) => setForm((p) => ({ ...p, semester: value }))}
                       >
-                        {semesterOptions.map((option) => (
-                          <option key={option} value={option}>
-                            Semester {option}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select semester" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {semesterOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              Semester {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 

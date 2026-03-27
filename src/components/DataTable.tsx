@@ -1,7 +1,6 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Column<T> {
@@ -22,83 +21,113 @@ interface DataTableProps<T> {
 }
 
 export function DataTable<T extends Record<string, any>>({
-  data, columns, searchKey, filterKey, filterOptions, filterPlaceholder, pageSize = 10, actions,
+  data,
+  columns,
+  searchKey,
+  filterKey,
+  filterOptions,
+  filterPlaceholder,
+  pageSize = 10,
+  actions,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(0);
 
-  let filtered = data;
-  if (searchKey && search) {
-    filtered = filtered.filter(item =>
-      String(item[searchKey]).toLowerCase().includes(search.toLowerCase())
-    );
-  }
-  if (filterKey && filter !== "all") {
-    filtered = filtered.filter(item => String(item[filterKey]) === filter);
-  }
+  const filtered = useMemo(() => {
+    let result = data;
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
+    if (searchKey && search) {
+      result = result.filter((item) =>
+        String(item[searchKey]).toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (filterKey && filter !== "all") {
+      result = result.filter((item) => String(item[filterKey]) === filter);
+    }
+
+    return result;
+  }, [data, filter, filterKey, search, searchKey]);
+
+  const totalPages = Math.max(Math.ceil(filtered.length / pageSize), 1);
   const paged = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1">
-          {searchKey && (
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                className="pl-9 h-9 text-sm"
-              />
-            </div>
-          )}
-          {filterOptions && (
-            <Select value={filter} onValueChange={(v) => { setFilter(v); setPage(0); }}>
-              <SelectTrigger className="w-[180px] h-9 text-sm">
-                <SelectValue placeholder={filterPlaceholder || "Filter"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                {filterOptions.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+    <div className="space-y-5">
+      <div className="data-card">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+            {searchKey && (
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(0);
+                  }}
+                  className="pl-11"
+                />
+              </div>
+            )}
+
+            {filterOptions && (
+              <div className="w-full max-w-[220px]">
+                <select
+                  value={filter}
+                  onChange={(event) => {
+                    setFilter(event.target.value);
+                    setPage(0);
+                  }}
+                  className="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-foreground backdrop-blur-xl"
+                >
+                  <option value="all">{filterPlaceholder || "All"}</option>
+                  {filterOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {actions}
         </div>
-        {actions}
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="data-card overflow-hidden p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
-                {columns.map(col => (
-                  <th key={col.key} className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                    {col.header}
+              <tr className="border-b border-white/10 bg-white/[0.03]">
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+                  >
+                    {column.header}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {paged.map((item, i) => (
-                <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                  {columns.map(col => (
-                    <td key={col.key} className="px-4 py-3 text-foreground">
-                      {col.render ? col.render(item) : String(item[col.key] ?? '')}
+              {paged.map((item, index) => (
+                <tr key={index} className="border-b border-white/6 transition hover:bg-white/[0.03] last:border-0">
+                  {columns.map((column) => (
+                    <td key={column.key} className="px-5 py-4 align-middle text-foreground">
+                      {column.render ? column.render(item) : String(item[column.key] ?? "")}
                     </td>
                   ))}
                 </tr>
               ))}
+
               {paged.length === 0 && (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
-                    No data found
+                  <td colSpan={columns.length} className="px-5 py-16 text-center text-sm text-muted-foreground">
+                    No data found for the current filters.
                   </td>
                 </tr>
               )}
@@ -107,26 +136,42 @@ export function DataTable<T extends Record<string, any>>({
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, filtered.length)} of {filtered.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="h-4 w-4" />
+      <div className="data-card flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Showing {filtered.length === 0 ? 0 : page * pageSize + 1}-
+          {Math.min((page + 1) * pageSize, filtered.length)} of {filtered.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            disabled={page === 0}
+            onClick={() => setPage((current) => current - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => (
+            <Button
+              key={index}
+              variant={page === index ? "default" : "outline"}
+              size="icon"
+              onClick={() => setPage(index)}
+            >
+              {index + 1}
             </Button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => (
-              <Button key={i} variant={page === i ? "default" : "ghost"} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(i)}>
-                {i + 1}
-              </Button>
-            ))}
-            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          ))}
+
+          <Button
+            variant="outline"
+            size="icon"
+            disabled={page >= totalPages - 1 || filtered.length === 0}
+            onClick={() => setPage((current) => current + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
